@@ -9,49 +9,49 @@ $resumes  = $resumeModel->getAll($userId);
 
 // Handle AJAX status update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    if (!Auth::verifyCsrf($_POST['csrf_token'] ?? '')) {
-        json_response(['error' => 'CSRF error'], 403);
-    }
-    $action = $_POST['action'];
-    $id     = (int)($_POST['id'] ?? 0);
+  if (!Auth::verifyCsrf($_POST['csrf_token'] ?? '')) {
+    json_response(['error' => 'CSRF error'], 403);
+  }
+  $action = $_POST['action'];
+  $id     = (int)($_POST['id'] ?? 0);
 
-    if ($action === 'delete') {
-        $appModel->delete($id, $userId);
-        json_response(['ok' => true]);
+  if ($action === 'delete') {
+    $appModel->delete($id, $userId);
+    json_response(['ok' => true]);
+  }
+  if ($action === 'update_status') {
+    $status = $_POST['status'] ?? '';
+    $appModel->updateStatus($id, $userId, $status);
+    json_response(['ok' => true]);
+  }
+  if ($action === 'create' || $action === 'update') {
+    $data = [
+      'company'      => trim($_POST['company'] ?? ''),
+      'job_title'    => trim($_POST['job_title'] ?? ''),
+      'job_url'      => trim($_POST['job_url'] ?? ''),
+      'job_type'     => $_POST['job_type'] ?? 'not_specified',
+      'status'       => $_POST['status'] ?? 'wishlist',
+      'salary_range' => trim($_POST['salary_range'] ?? ''),
+      'resume_id'    => !empty($_POST['resume_id']) ? (int)$_POST['resume_id'] : null,
+      'notes'        => trim($_POST['notes'] ?? ''),
+      'applied_at'   => !empty($_POST['applied_at']) ? $_POST['applied_at'] : null,
+    ];
+    if (empty($data['company']) || empty($data['job_title'])) {
+      json_response(['error' => 'Company and job title are required.'], 422);
     }
-    if ($action === 'update_status') {
-        $status = $_POST['status'] ?? '';
-        $appModel->updateStatus($id, $userId, $status);
-        json_response(['ok' => true]);
+    if ($action === 'create') {
+      $newId = $appModel->create($userId, $data);
+      json_response(['ok' => true, 'id' => $newId]);
+    } else {
+      $appModel->update($id, $userId, $data);
+      json_response(['ok' => true]);
     }
-    if ($action === 'create' || $action === 'update') {
-        $data = [
-            'company'      => trim($_POST['company'] ?? ''),
-            'job_title'    => trim($_POST['job_title'] ?? ''),
-            'job_url'      => trim($_POST['job_url'] ?? ''),
-            'job_type'     => $_POST['job_type'] ?? 'not_specified',
-            'status'       => $_POST['status'] ?? 'wishlist',
-            'salary_range' => trim($_POST['salary_range'] ?? ''),
-            'resume_id'    => !empty($_POST['resume_id']) ? (int)$_POST['resume_id'] : null,
-            'notes'        => trim($_POST['notes'] ?? ''),
-            'applied_at'   => !empty($_POST['applied_at']) ? $_POST['applied_at'] : null,
-        ];
-        if (empty($data['company']) || empty($data['job_title'])) {
-            json_response(['error' => 'Company and job title are required.'], 422);
-        }
-        if ($action === 'create') {
-            $newId = $appModel->create($userId, $data);
-            json_response(['ok' => true, 'id' => $newId]);
-        } else {
-            $appModel->update($id, $userId, $data);
-            json_response(['ok' => true]);
-        }
-    }
+  }
 }
 
 $filters = [
-    'status' => $_GET['status'] ?? '',
-    'search' => $_GET['search'] ?? '',
+  'status' => $_GET['status'] ?? '',
+  'search' => $_GET['search'] ?? '',
 ];
 $apps   = $appModel->getAll($userId, $filters);
 $counts = $appModel->countByStatus($userId);
@@ -83,11 +83,11 @@ ob_start();
   <a href="<?= APP_URL ?>/applications.php" class="btn btn-sm <?= empty($filters['status']) ? 'btn-dark' : 'btn-outline-secondary' ?>">
     All <span class="badge bg-secondary ms-1"><?= array_sum($counts) ?></span>
   </a>
-  <?php foreach (['wishlist','applied','interviewing','offer','rejected'] as $s): ?>
-  <a href="?status=<?= $s ?>" class="btn btn-sm <?= $filters['status']===$s ? 'btn-dark' : 'btn-outline-secondary' ?>">
-    <span class="col-dot dot-<?= $s ?> me-1" style="display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle"></span>
-    <?= ucfirst($s) ?> <span class="badge bg-secondary ms-1"><?= $counts[$s] ?></span>
-  </a>
+  <?php foreach (['wishlist', 'applied', 'interviewing', 'offer', 'rejected'] as $s): ?>
+    <a href="?status=<?= $s ?>" class="btn btn-sm <?= $filters['status'] === $s ? 'btn-dark' : 'btn-outline-secondary' ?>">
+      <span class="col-dot dot-<?= $s ?> me-1" style="display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle"></span>
+      <?= ucfirst($s) ?> <span class="badge bg-secondary ms-1"><?= $counts[$s] ?></span>
+    </a>
   <?php endforeach; ?>
 </div>
 
@@ -95,38 +95,38 @@ ob_start();
 <div id="kanbanView">
   <div class="kanban-board">
     <?php
-    $statuses = ['wishlist','applied','interviewing','offer','rejected'];
+    $statuses = ['wishlist', 'applied', 'interviewing', 'offer', 'rejected'];
     foreach ($statuses as $s):
       $colApps = array_filter($apps, fn($a) => $a['status'] === $s);
     ?>
-    <div class="kanban-col" data-status="<?= $s ?>">
-      <div class="kanban-col-header">
-        <span class="col-dot dot-<?= $s ?>"></span>
-        <?= strtoupper($s) ?>
-        <span class="col-count"><?= count($colApps) ?></span>
-      </div>
-      <div class="kanban-cards">
-        <?php foreach ($colApps as $app): ?>
-        <div class="app-card" data-id="<?= $app['id'] ?>">
-          <span class="app-status-badge badge badge-<?= $app['status'] ?>"><?= h(statusLabel($app['status'])) ?></span>
-          <div class="company-logo"><?= strtoupper(substr($app['company'],0,1)) ?></div>
-          <div class="job-title"><?= h($app['job_title']) ?></div>
-          <div class="company-name"><?= h($app['company']) ?></div>
-          <div class="card-footer-row">
-            <i class="bi bi-calendar3"></i>
-            <?= $app['applied_at'] ? date('M d', strtotime($app['applied_at'])) : 'No date' ?>
-            <div class="ms-auto d-flex gap-1">
-              <button class="btn btn-sm p-0 px-1 btn-edit" data-id="<?= $app['id'] ?>" title="Edit"><i class="bi bi-pencil" style="font-size:12px"></i></button>
-              <button class="btn btn-sm p-0 px-1 btn-view" data-id="<?= $app['id'] ?>" title="View"><i class="bi bi-eye" style="font-size:12px"></i></button>
-            </div>
-          </div>
+      <div class="kanban-col" data-status="<?= $s ?>">
+        <div class="kanban-col-header">
+          <span class="col-dot dot-<?= $s ?>"></span>
+          <?= strtoupper($s) ?>
+          <span class="col-count"><?= count($colApps) ?></span>
         </div>
-        <?php endforeach; ?>
-        <?php if (empty($colApps)): ?>
-        <div class="text-center text-muted py-3" style="font-size:13px">No applications</div>
-        <?php endif; ?>
+        <div class="kanban-cards">
+          <?php foreach ($colApps as $app): ?>
+            <div class="app-card" data-id="<?= $app['id'] ?>">
+              <span class="app-status-badge badge badge-<?= $app['status'] ?>"><?= h(statusLabel($app['status'])) ?></span>
+              <div class="company-logo"><?= strtoupper(substr($app['company'], 0, 1)) ?></div>
+              <div class="job-title"><?= h($app['job_title']) ?></div>
+              <div class="company-name"><?= h($app['company']) ?></div>
+              <div class="card-footer-row">
+                <i class="bi bi-calendar3"></i>
+                <?= $app['applied_at'] ? date('M d', strtotime($app['applied_at'])) : 'No date' ?>
+                <div class="ms-auto d-flex gap-1">
+                  <a href="edit-application.php?id=<?= base64_encode($app['id']) ?>" class="btn btn-sm p-0 px-1" title="Edit"><i class="bi bi-pencil" style="font-size:12px"></i></a>
+                  <button class="btn btn-sm p-0 px-1 btn-view" data-id="<?= $app['id'] ?>" title="View"><i class="bi bi-eye" style="font-size:12px"></i></button>
+                </div>
+              </div>
+            </div>
+          <?php endforeach; ?>
+          <?php if (empty($colApps)): ?>
+            <div class="text-center text-muted py-3" style="font-size:13px">No applications</div>
+          <?php endif; ?>
+        </div>
       </div>
-    </div>
     <?php endforeach; ?>
   </div>
 </div>
@@ -136,41 +136,45 @@ ob_start();
   <div class="card">
     <div class="table-responsive">
       <table class="table table-hover mb-0">
-        <thead><tr>
-          <th>Company & Role</th>
-          <th>Status</th>
-          <th>Type</th>
-          <th>Salary</th>
-          <th>Applied</th>
-          <th>Actions</th>
-        </tr></thead>
+        <thead>
+          <tr>
+            <th>Company & Role</th>
+            <th>Status</th>
+            <th>Type</th>
+            <th>Salary</th>
+            <th>Applied</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
         <tbody>
           <?php if (empty($apps)): ?>
-          <tr><td colspan="6" class="text-center py-4 text-muted">No applications found.</td></tr>
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">No applications found.</td>
+            </tr>
           <?php endif; ?>
           <?php foreach ($apps as $app): ?>
-          <tr>
-            <td>
-              <div class="d-flex align-items-center gap-2">
-                <div style="width:32px;height:32px;border-radius:8px;background:var(--bg-page);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--brand)"><?= strtoupper(substr($app['company'],0,1)) ?></div>
-                <div>
-                  <div style="font-weight:600"><?= h($app['job_title']) ?></div>
-                  <div style="font-size:12px;color:var(--text-secondary)"><?= h($app['company']) ?></div>
+            <tr>
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <div style="width:32px;height:32px;border-radius:8px;background:var(--bg-page);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--brand)"><?= strtoupper(substr($app['company'], 0, 1)) ?></div>
+                  <div>
+                    <div style="font-weight:600"><?= h($app['job_title']) ?></div>
+                    <div style="font-size:12px;color:var(--text-secondary)"><?= h($app['company']) ?></div>
+                  </div>
                 </div>
-              </div>
-            </td>
-            <td><span class="badge rounded-pill badge-<?= $app['status'] ?>"><?= h(statusLabel($app['status'])) ?></span></td>
-            <td style="font-size:13px"><?= h(ucfirst(str_replace('_',' ',$app['job_type']))) ?></td>
-            <td style="font-size:13px"><?= h($app['salary_range'] ?: '—') ?></td>
-            <td style="font-size:13px"><?= $app['applied_at'] ? date('M d, Y', strtotime($app['applied_at'])) : '—' ?></td>
-            <td>
-              <div class="d-flex gap-1">
-                <a href="<?= APP_URL ?>/application-detail.php?id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
-                <button class="btn btn-sm btn-outline-secondary py-0 px-2 btn-edit" data-id="<?= $app['id'] ?>"><i class="bi bi-pencil"></i></button>
-                <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete" data-id="<?= $app['id'] ?>"><i class="bi bi-trash"></i></button>
-              </div>
-            </td>
-          </tr>
+              </td>
+              <td><span class="badge rounded-pill badge-<?= $app['status'] ?>"><?= h(statusLabel($app['status'])) ?></span></td>
+              <td style="font-size:13px"><?= h(ucfirst(str_replace('_', ' ', $app['job_type']))) ?></td>
+              <td style="font-size:13px"><?= h($app['salary_range'] ?: '—') ?></td>
+              <td style="font-size:13px"><?= $app['applied_at'] ? date('M d, Y', strtotime($app['applied_at'])) : '—' ?></td>
+              <td>
+                <div class="d-flex gap-1">
+                  <a href="<?= APP_URL ?>/application-detail.php?id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
+                  <a href="edit-application.php?id=<?= base64_encode($app['id']) ?>" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Edit"><i class="bi bi-pencil"></i></a>
+                  <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete" data-id="<?= $app['id'] ?>"><i class="bi bi-trash"></i></button>
+                </div>
+              </td>
+            </tr>
           <?php endforeach; ?>
         </tbody>
       </table>
@@ -251,7 +255,7 @@ ob_start();
               <select name="resume_id" id="f_resume" class="form-select">
                 <option value="">— Select resume —</option>
                 <?php foreach ($resumes as $r): ?>
-                <option value="<?= $r['id'] ?>"><?= h($r['version_label'] ?: $r['original_name']) ?></option>
+                  <option value="<?= $r['id'] ?>"><?= h($r['version_label'] ?: $r['original_name']) ?></option>
                 <?php endforeach; ?>
               </select>
             </div>
@@ -261,7 +265,7 @@ ob_start();
           <div class="mb-3">
             <label class="form-label"><i class="bi bi-journal-text text-primary me-1"></i> Notes</label>
             <textarea name="notes" id="f_notes" class="form-control" rows="4"
-                      placeholder="Mention key keywords, referral names, or why you're interested..."></textarea>
+              placeholder="Mention key keywords, referral names, or why you're interested..."></textarea>
           </div>
         </form>
       </div>
@@ -286,7 +290,7 @@ initApplicationsPage();
 JS;
 
 if ($openNew) {
-    $inlineScript .= "\ndocument.addEventListener('DOMContentLoaded',()=>document.getElementById('btnNewApp').click());";
+  $inlineScript .= "\ndocument.addEventListener('DOMContentLoaded',()=>document.getElementById('btnNewApp').click());";
 }
 
 include __DIR__ . '/../views/partials/header.php';
