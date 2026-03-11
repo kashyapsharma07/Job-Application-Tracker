@@ -1,0 +1,8 @@
+Options -Indexes
+RewriteEngine On
+
+# Block direct access to uploads of non-image types
+<FilesMatch "\.(php|php3|php4|php5|phtml)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
