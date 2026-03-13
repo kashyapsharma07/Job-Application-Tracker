@@ -8,6 +8,8 @@ class Application {
         $this->db = Database::getInstance();
     }
 
+    // ── Existing methods (unchanged) ─────────────────────────────────────────
+
     public function getAll(int $userId, array $filters = []): array {
         $sql = 'SELECT a.*, r.version_label as resume_label, r.original_name as resume_name
                 FROM applications a
@@ -112,9 +114,11 @@ class Application {
             'SELECT status, COUNT(*) as count FROM applications WHERE user_id = ? GROUP BY status'
         );
         $stmt->execute([$userId]);
-        $result = ['wishlist'=>0,'applied'=>0,'interviewing'=>0,'offer'=>0,'rejected'=>0];
+        $result = ['wishlist' => 0, 'applied' => 0, 'interviewing' => 0, 'offer' => 0, 'rejected' => 0];
         foreach ($stmt->fetchAll() as $row) {
-            $result[$row['status']] = (int)$row['count'];
+            if (isset($result[$row['status']])) {
+                $result[$row['status']] = (int)$row['count'];
+            }
         }
         return $result;
     }
@@ -132,103 +136,79 @@ class Application {
 
     public function topCompanies(int $userId, int $limit = 5): array {
         $stmt = $this->db->prepare(
-            'SELECT company, COUNT(*) as count, status
-             FROM applications WHERE user_id = ?
-             GROUP BY company ORDER BY count DESC LIMIT ?'
+            'SELECT company, COUNT(*) as count, MAX(status) as status
+             FROM applications
+             WHERE user_id = ?
+             GROUP BY company
+             ORDER BY count DESC
+             LIMIT ?'
         );
         $stmt->execute([$userId, $limit]);
         return $stmt->fetchAll();
     }
 
-    // ── NEW METHOD 1 ─────────────────────────────────────────────────────────
-    // Returns funnel conversion counts: applied → interviewing → offer
-    // Each step also carries a conversion % relative to the previous step.
+    // ── NEW: Conversion funnel ────────────────────────────────────────────────
+    // Returns 3 funnel steps: total → interviewed → offered
     public function conversionFunnel(int $userId): array {
-        $stmt = $this->db->prepare(
-            'SELECT status, COUNT(*) as count
-             FROM applications
-             WHERE user_id = ? AND status IN ("applied","interviewing","offer","rejected")
-             GROUP BY status'
-        );
-        $stmt->execute([$userId]);
-        $raw = ['applied'=>0,'interviewing'=>0,'offer'=>0,'rejected'=>0];
-        foreach ($stmt->fetchAll() as $row) {
-            $raw[$row['status']] = (int)$row['count'];
-        }
+        $counts = $this->countByStatus($userId);
+        $total       = array_sum($counts);
+        $interviewed = $counts['interviewing'] + $counts['offer'];
+        $offered     = $counts['offer'];
 
-        // Total "in pipeline" = applied + interviewing + offer + rejected
-        $total = array_sum($raw);
-
-        $funnel = [];
-
-        // Step 1 — Applied (100% baseline)
-        $funnel[] = [
-            'label'   => 'Applied',
-            'status'  => 'applied',
-            'count'   => $total,
-            'pct'     => 100,
-            'color'   => '#1a73e8',
+        return [
+            ['label' => 'Applied',        'count' => $total,       'color' => '#1a73e8', 'status' => 'applied'],
+            ['label' => 'Interviewed',    'count' => $interviewed, 'color' => '#f59e0b', 'status' => 'interviewing'],
+            ['label' => 'Offer received', 'count' => $offered,     'color' => '#10b981', 'status' => 'offer'],
         ];
-
-        // Step 2 — Got an interview (interviewing + offer, i.e. made it past applied)
-        $interviewed = $raw['interviewing'] + $raw['offer'];
-        $funnel[] = [
-            'label'   => 'Interviewed',
-            'status'  => 'interviewing',
-            'count'   => $interviewed,
-            'pct'     => $total > 0 ? round(($interviewed / $total) * 100) : 0,
-            'color'   => '#f59e0b',
-        ];
-
-        // Step 3 — Received offer
-        $funnel[] = [
-            'label'   => 'Offer received',
-            'status'  => 'offer',
-            'count'   => $raw['offer'],
-            'pct'     => $total > 0 ? round(($raw['offer'] / $total) * 100) : 0,
-            'color'   => '#10b981',
-        ];
-
-        return $funnel;
     }
 
-    // ── NEW METHOD 2 ─────────────────────────────────────────────────────────
-    // Returns applications stuck in "applied" or "interviewing" for > $days days
-    // with no status update. These are the "needs follow-up" candidates.
+    // ── NEW: Applications stalled for more than $days days ───────────────────
     public function stalledApps(int $userId, int $days = 7): array {
         $stmt = $this->db->prepare(
-            'SELECT id, company, job_title, status, updated_at,
-                    DATEDIFF(NOW(), updated_at) as days_stalled
+            "SELECT id, company, job_title, status, updated_at
              FROM applications
              WHERE user_id = ?
-               AND status IN ("applied", "interviewing")
+               AND status IN ('applied', 'interviewing')
                AND updated_at < DATE_SUB(NOW(), INTERVAL ? DAY)
-             ORDER BY updated_at ASC'
+             ORDER BY updated_at ASC"
         );
         $stmt->execute([$userId, $days]);
         return $stmt->fetchAll();
     }
 
-    // ── NEW METHOD 3 ─────────────────────────────────────────────────────────
-    // Finds the day of the week on which the user's applications most often
-    // progressed (i.e. moved to interviewing or offer status).
-    // Returns the day name (e.g. "Tuesday") or null if not enough data.
+    // ── NEW: Best day of week (by progression rate) ───────────────────────────
     public function bestDayOfWeek(int $userId): ?string {
-        $stmt = $this->db->prepare(
-            'SELECT DAYNAME(created_at) as day_name, COUNT(*) as count
-             FROM applications
-             WHERE user_id = ?
-               AND status IN ("interviewing", "offer")
-             GROUP BY day_name
-             ORDER BY count DESC
-             LIMIT 1'
-        );
-        $stmt->execute([$userId]);
-        $row = $stmt->fetch();
-        return $row ? $row['day_name'] : null;
+                $stmt = $this->db->prepare(
+                        "SELECT
+                             DAYNAME(created_at) AS day,
+                             COUNT(*) AS total,
+                             SUM(CASE WHEN status IN ('interviewing','offer') THEN 1 ELSE 0 END) AS progressed
+                         FROM applications
+                         WHERE user_id = ?
+                         GROUP BY DAYNAME(created_at)
+                         HAVING total >= 2
+                         ORDER BY (SUM(CASE WHEN status IN ('interviewing','offer') THEN 1 ELSE 0 END) / COUNT(*)) DESC
+                         LIMIT 1"
+                );
+                $stmt->execute([$userId]);
+                $row = $stmt->fetch();
+                return $row ? $row['day'] : null;
     }
 
-    // ── Application events / timeline ────────────────────────────────────────
+    // ── NEW: Count apps created this calendar month ───────────────────────────
+    public function countThisMonth(int $userId): int {
+        $stmt = $this->db->prepare(
+            'SELECT COUNT(*) FROM applications
+             WHERE user_id = ?
+               AND MONTH(created_at) = MONTH(NOW())
+               AND YEAR(created_at)  = YEAR(NOW())'
+        );
+        $stmt->execute([$userId]);
+        return (int)$stmt->fetchColumn();
+    }
+
+    // ── Application events / timeline (existing) ─────────────────────────────
+
     public function addEvent(int $appId, string $type, string $title, ?string $desc = null, ?string $date = null): int {
         $stmt = $this->db->prepare(
             'INSERT INTO application_events (application_id, event_type, title, description, event_date)

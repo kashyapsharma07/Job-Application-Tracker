@@ -1,365 +1,443 @@
 <?php
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 require_once __DIR__ . '/../src/bootstrap.php';
 Auth::require();
 
 $userId   = Auth::id();
 $appModel = new Application();
 
-// ── Existing data ─────────────────────────────────────────────────────────
-$counts  = $appModel->countByStatus($userId);
-$total   = array_sum($counts);
-$byMonth = $appModel->countByMonth($userId, 6);
-$topCo   = $appModel->topCompanies($userId, 5);
-
-// Build recent activity
+// ── Core data ─────────────────────────────────────────────────────────────────
+$counts     = $appModel->countByStatus($userId);
+$total      = array_sum($counts);
+$byMonth    = $appModel->countByMonth($userId, 6);
+$topCo      = $appModel->topCompanies($userId, 5);
 $allApps    = $appModel->getAll($userId);
-$recentApps = array_slice($allApps, 0, 5);
+$recentApps = array_slice($allApps, 0, 6);
 
-// ── NEW: Funnel + Insight data ────────────────────────────────────────────
-$funnel      = $appModel->conversionFunnel($userId);
-$stalled     = $appModel->stalledApps($userId, 7);
-$stalledCount = count($stalled);
-$bestDay     = $appModel->bestDayOfWeek($userId);
+// ── New analytics data (new methods in Application.php) ───────────────────────
+$funnel    = $appModel->conversionFunnel($userId);
+$stalled   = $appModel->stalledApps($userId, 7);
+$bestDay   = $appModel->bestDayOfWeek($userId);
+$thisMonth = $appModel->countThisMonth($userId);
 
-// Build insight chips array — only show chips that have real data
+// ── Computed stats ────────────────────────────────────────────────────────────
+$interviewTotal = $counts['interviewing'] + $counts['offer'];
+$interviewPct   = $total > 0 ? round(($interviewTotal / $total) * 100) : 0;
+$offerPct       = $total > 0 ? round(($counts['offer']   / $total) * 100) : 0;
+$successRate    = $offerPct;
+$stalledCount   = count($stalled);
+$funnelBase     = max(1, $funnel[0]['count']); // avoid division by zero
+
+// ── Build insight chips ───────────────────────────────────────────────────────
 $insights = [];
 
 if ($stalledCount > 0) {
     $insights[] = [
-        'type'  => 'alert',
-        'icon'  => 'bi-exclamation-circle',
-        'text'  => $stalledCount === 1
-                    ? '1 application needs a follow-up (7+ days stale)'
-                    : "{$stalledCount} applications need a follow-up (7+ days stale)",
-        'url'   => APP_URL . '/applications.php?status=applied',
+        'type' => 'warning',
+        'icon' => 'bi-clock-history',
+        'text' => $stalledCount . ' application' . ($stalledCount > 1 ? 's' : '') . ' need' . ($stalledCount === 1 ? 's' : '') . ' follow-up (7+ days with no update)',
+        'href' => APP_URL . '/applications.php?status=applied',
     ];
 }
 
-$interviewRate = $total > 0 ? round((($counts['interviewing'] + $counts['offer']) / $total) * 100) : 0;
-if ($interviewRate > 0) {
-    $rateLabel = $interviewRate >= 20 ? 'above average' : 'keep applying to improve this';
+if ($interviewPct >= 20) {
     $insights[] = [
-        'type'  => 'info',
-        'icon'  => 'bi-graph-up-arrow',
-        'text'  => "Your interview rate is {$interviewRate}% — {$rateLabel}",
-        'url'   => APP_URL . '/applications.php?status=interviewing',
+        'type' => 'positive',
+        'icon' => 'bi-graph-up-arrow',
+        'text' => 'Your interview rate is ' . $interviewPct . '% — above the 20% average',
+        'href' => APP_URL . '/applications.php?status=interviewing',
+    ];
+} elseif ($total >= 3) {
+    $insights[] = [
+        'type' => 'neutral',
+        'icon' => 'bi-graph-up',
+        'text' => 'Interview rate: ' . $interviewPct . '% — keep applying to push this higher',
+        'href' => APP_URL . '/applications.php',
     ];
 }
 
 if ($bestDay) {
     $insights[] = [
-        'type'  => 'positive',
-        'icon'  => 'bi-calendar-check',
-        'text'  => "Applications submitted on {$bestDay}s progress the most",
-        'url'   => null,
+        'type' => 'neutral',
+        'icon' => 'bi-calendar-check',
+        'text' => 'Applications you send on ' . $bestDay . 's progress the most',
+        'href' => '#',
     ];
 }
 
 if ($counts['offer'] > 0) {
     $insights[] = [
-        'type'  => 'positive',
-        'icon'  => 'bi-trophy',
-        'text'  => $counts['offer'] === 1
-                    ? 'You have 1 active offer — nice work!'
-                    : "You have {$counts['offer']} active offers — nice work!",
-        'url'   => APP_URL . '/applications.php?status=offer',
+        'type' => 'positive',
+        'icon' => 'bi-trophy',
+        'text' => 'You have ' . $counts['offer'] . ' active offer' . ($counts['offer'] > 1 ? 's' : '') . ' — great work!',
+        'href' => APP_URL . '/applications.php?status=offer',
     ];
 }
 
-// ── Page meta ─────────────────────────────────────────────────────────────
-$pageTitle   = 'Analytics';
-$currentPage = 'analytics';
-
-// ── Chart.js data ─────────────────────────────────────────────────────────
+// ── Chart.js month data ────────────────────────────────────────────────────────
 $monthLabels = [];
 $monthData   = [];
 for ($i = 5; $i >= 0; $i--) {
-    $monthLabels[] = date('M', strtotime("-$i months"));
+    $monthLabels[] = date('M', strtotime("-{$i} months"));
     $monthData[]   = 0;
 }
 foreach ($byMonth as $row) {
-    $label = date('M', strtotime($row['month'] . '-01'));
-    $idx   = array_search($label, $monthLabels);
-    if ($idx !== false) $monthData[$idx] = (int)$row['count'];
+    $lbl = date('M', strtotime($row['month'] . '-01'));
+    $idx = array_search($lbl, $monthLabels);
+    if ($idx !== false) {
+        $monthData[$idx] = (int)$row['count'];
+    }
 }
 
+// JSON-encode for inline JS
 $chartMonthLabels = json_encode($monthLabels);
 $chartMonthData   = json_encode($monthData);
-$chartStageLabels = json_encode(['Wishlist','Applied','Interviewing','Offer','Rejected']);
-$chartStageData   = json_encode(array_values($counts));
-$chartFunnelData  = json_encode($funnel);
+$funnelJson       = json_encode($funnel);
+
+$stageColors = [
+    'wishlist'     => '#6b7280',
+    'applied'      => '#1a73e8',
+    'interviewing' => '#f59e0b',
+    'offer'        => '#10b981',
+    'rejected'     => '#ef4444',
+];
+
+$pageTitle   = 'Analytics';
+$currentPage = 'analytics';
 
 ob_start();
 ?>
 
-<!-- ── Page header ──────────────────────────────────────────────────────── -->
-<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+<!-- ── Page header ───────────────────────────────────────────────────────────── -->
+<div class="d-flex align-items-start justify-content-between mb-3">
   <div>
-    <h1 style="font-size:22px;margin:0">Analytics</h1>
-    <p class="text-muted mb-0" style="font-size:13px">
-      Last updated <?= date('g:i A') ?> &middot; Past 6 months
-    </p>
+    <h4 style="font-family:'Sora',sans-serif;font-weight:700;margin:0">Analytics</h4>
+    <div style="font-size:12px;color:var(--text-secondary);margin-top:3px">
+      Updated <?= date('g:i A') ?> &middot; Showing last 6 months
+    </div>
   </div>
   <a href="<?= APP_URL ?>/applications.php" class="btn btn-sm btn-outline-primary">
-    <i class="bi bi-folder2-open me-1"></i> View All Applications
+    <i class="bi bi-folder2-open me-1"></i>All Applications
   </a>
 </div>
 
-<!-- ── Insight chips ────────────────────────────────────────────────────── -->
+<!-- ── Insight chips ─────────────────────────────────────────────────────────── -->
 <?php if (!empty($insights)): ?>
-<div class="insight-chips mb-4">
+<div class="insight-chips-row mb-4">
   <?php foreach ($insights as $chip): ?>
-    <?php $tag = $chip['url'] ? 'a' : 'span'; ?>
-    <<?= $tag ?>
-      <?= $chip['url'] ? 'href="' . h($chip['url']) . '"' : '' ?>
-      class="insight-chip insight-chip--<?= h($chip['type']) ?>"
-    >
-      <i class="bi <?= h($chip['icon']) ?>"></i>
-      <?= h($chip['text']) ?>
-      <?php if ($chip['url']): ?><i class="bi bi-arrow-right ms-1" style="font-size:11px"></i><?php endif; ?>
-    </<?= $tag ?>>
+    <a href="<?= h($chip['href']) ?>" class="insight-chip insight-chip--<?= $chip['type'] ?>">
+      <i class="bi <?= $chip['icon'] ?>"></i>
+      <span><?= h($chip['text']) ?></span>
+      <?php if ($chip['href'] !== '#'): ?>
+        <i class="bi bi-arrow-right" style="font-size:11px;opacity:.5"></i>
+      <?php endif; ?>
+    </a>
   <?php endforeach; ?>
 </div>
 <?php endif; ?>
 
-<!-- ── Stat cards ───────────────────────────────────────────────────────── -->
+<!-- ── Stat cards ────────────────────────────────────────────────────────────── -->
 <div class="stat-grid mb-4">
+
   <div class="stat-card stat-card--blue">
     <div class="stat-label">Total Applications</div>
     <div class="stat-value"><?= $total ?></div>
-    <div class="stat-badge text-success"><i class="bi bi-arrow-up-short"></i> All time</div>
+    <span class="stat-delta stat-delta--neutral">
+      <i class="bi bi-plus-circle"></i> <?= $thisMonth ?> this month
+    </span>
   </div>
+
   <div class="stat-card stat-card--yellow">
     <div class="stat-label">Interviews Secured</div>
-    <div class="stat-value"><?= $counts['interviewing'] + $counts['offer'] ?></div>
-    <div class="stat-badge" style="color:var(--text-secondary);font-size:12px">
-      <?= $interviewRate ?>% conversion
-    </div>
+    <div class="stat-value"><?= $interviewTotal ?></div>
+    <span class="stat-delta <?= $interviewPct >= 20 ? 'stat-delta--up' : 'stat-delta--neutral' ?>">
+      <i class="bi bi-arrow-<?= $interviewPct >= 20 ? 'up' : 'right' ?>-short"></i>
+      <?= $interviewPct ?>% conversion
+    </span>
   </div>
+
   <div class="stat-card stat-card--green">
     <div class="stat-label">Offers Received</div>
     <div class="stat-value"><?= $counts['offer'] ?></div>
-    <div class="stat-badge" style="color:var(--text-secondary);font-size:12px">
-      <?= $total > 0 ? round(($counts['offer'] / $total) * 100) : 0 ?>% offer rate
-    </div>
+    <span class="stat-delta <?= $offerPct > 0 ? 'stat-delta--up' : 'stat-delta--neutral' ?>">
+      <i class="bi bi-award"></i> <?= $offerPct ?>% offer rate
+    </span>
   </div>
-  <div class="stat-card stat-card--red">
+
+  <div class="stat-card stat-card--purple">
     <div class="stat-label">Success Rate</div>
-    <div class="stat-value"><?= $total > 0 ? round(($counts['offer'] / $total) * 100) : 0 ?>%</div>
-    <div class="stat-badge text-danger"><i class="bi bi-arrow-down-short"></i> Offers / Total</div>
+    <div class="stat-value"><?= $successRate ?>%</div>
+    <span class="stat-delta stat-delta--<?= $successRate > 0 ? 'up' : 'neutral' ?>">
+      <i class="bi bi-pie-chart"></i> Offers ÷ Total
+    </span>
   </div>
+
 </div>
 
-<!-- ── Row 1: Timeline + Funnel ─────────────────────────────────────────── -->
+<!-- ── Row 2: Timeline chart + Funnel ────────────────────────────────────────── -->
 <div class="row g-4 mb-4">
 
-  <!-- Applications Over Time -->
+  <!-- Timeline chart -->
   <div class="col-lg-7">
     <div class="card h-100">
       <div class="card-header">
         <span>Applications Over Time</span>
-        <span style="font-size:12px;color:var(--text-secondary)">Last 6 Months</span>
+        <span style="font-size:12px;color:var(--text-secondary)">Last 6 months</span>
       </div>
-      <div class="card-body">
-        <canvas id="chartTimeline" height="220"></canvas>
+      <div class="card-body" style="padding:20px">
+        <canvas id="chartTimeline" style="max-height:220px"></canvas>
       </div>
     </div>
   </div>
 
-  <!-- Conversion Funnel (NEW) -->
+  <!-- Funnel -->
   <div class="col-lg-5">
     <div class="card h-100">
       <div class="card-header">
         <span>Application Funnel</span>
-        <span style="font-size:12px;color:var(--text-secondary)">Conversion rates</span>
+        <span style="font-size:12px;color:var(--text-secondary)">Conversion</span>
       </div>
-      <div class="card-body" id="funnelPanel">
-        <?php foreach ($funnel as $i => $step): ?>
-        <a href="<?= APP_URL ?>/applications.php?status=<?= h($step['status']) ?>"
-           class="funnel-step" style="text-decoration:none">
-          <div class="funnel-step__meta">
-            <span class="funnel-step__label"><?= h($step['label']) ?></span>
-            <span class="funnel-step__count"><?= $step['count'] ?></span>
+      <div class="card-body" style="padding:16px 20px">
+        <?php foreach ($funnel as $i => $step):
+          $pct  = round(($step['count'] / $funnelBase) * 100);
+          $link = APP_URL . '/applications.php?status=' . $step['status'];
+        ?>
+        <a href="<?= $link ?>" class="funnel-step" style="--step-color:<?= $step['color'] ?>">
+          <div class="funnel-step__top">
+            <span class="funnel-step__label" style="color:<?= $step['color'] ?>">
+              <?= h($step['label']) ?>
+            </span>
+            <span class="funnel-step__meta">
+              <strong style="color:<?= $step['color'] ?>"><?= $step['count'] ?></strong>
+              <span style="color:var(--text-secondary);font-size:12px;margin-left:4px"><?= $pct ?>%</span>
+            </span>
           </div>
           <div class="funnel-step__track">
-            <div
-              class="funnel-step__fill"
-              style="width:0%;background:<?= h($step['color']) ?>"
-              data-width="<?= $step['pct'] ?>"
-            ></div>
+            <div class="funnel-step__fill" data-width="<?= $pct ?>" style="width:0%;background:<?= $step['color'] ?>"></div>
           </div>
-          <div class="funnel-step__pct" style="color:<?= h($step['color']) ?>">
-            <?= $step['pct'] ?>%
-          </div>
+          <?php if ($i < count($funnel) - 1): ?>
+            <div class="funnel-step__arrow"><i class="bi bi-chevron-down"></i></div>
+          <?php endif; ?>
         </a>
-        <?php if ($i < count($funnel) - 1): ?>
-          <div class="funnel-arrow"><i class="bi bi-chevron-down"></i></div>
-        <?php endif; ?>
         <?php endforeach; ?>
-        <?php if (empty($funnel) || $total === 0): ?>
-          <div class="text-center text-muted py-4" style="font-size:13px">
-            <i class="bi bi-bar-chart-steps d-block mb-2" style="font-size:28px;opacity:.3"></i>
-            Add applications to see your funnel
-          </div>
-        <?php endif; ?>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- ── Row 2: By Stage + Top Companies + Recent Activity ────────────────── -->
-<div class="row g-4">
+<!-- ── Row 3: By Stage + Top Companies ───────────────────────────────────────── -->
+<div class="row g-4 mb-4">
 
   <!-- By Stage -->
-  <div class="col-lg-7">
-    <div class="card">
-      <div class="card-header"><span>Applications by Stage</span></div>
-      <div class="card-body">
-        <?php
-        $stageColors = [
-          'wishlist'     => '#6b7280',
-          'applied'      => '#1a73e8',
-          'interviewing' => '#f59e0b',
-          'offer'        => '#10b981',
-          'rejected'     => '#ef4444',
-        ];
-        foreach ($counts as $s => $n):
+  <div class="col-lg-5">
+    <div class="card h-100">
+      <div class="card-header">
+        <span>By Stage</span>
+        <span style="font-size:12px;color:var(--text-secondary)"><?= $total ?> total</span>
+      </div>
+      <div class="card-body" style="padding:8px 20px">
+        <?php foreach ($counts as $s => $n):
           $pct = $total > 0 ? round(($n / $total) * 100) : 0;
         ?>
-        <div class="d-flex justify-content-between align-items-center mb-1">
-          <span style="font-size:13px;font-weight:500"><?= ucfirst($s) ?></span>
-          <span style="font-size:13px;font-weight:600"><?= $n ?></span>
-        </div>
-        <div class="progress mb-3" style="height:6px;border-radius:4px;background:#f0f4f9">
-          <div class="progress-bar" style="width:<?= $pct ?>%;background:<?= $stageColors[$s] ?>;border-radius:4px"></div>
-        </div>
+        <a href="<?= APP_URL ?>/applications.php?status=<?= $s ?>" class="stage-row">
+          <div class="stage-row__labels">
+            <span class="stage-row__dot" style="background:<?= $stageColors[$s] ?>"></span>
+            <span class="stage-row__name"><?= ucfirst($s) ?></span>
+            <span class="stage-row__count"><?= $n ?></span>
+            <span class="stage-row__pct"><?= $pct ?>%</span>
+          </div>
+          <div class="stage-row__track">
+            <div class="stage-row__fill" data-width="<?= $pct ?>" style="width:0%;background:<?= $stageColors[$s] ?>"></div>
+          </div>
+        </a>
         <?php endforeach; ?>
       </div>
     </div>
   </div>
 
   <!-- Top Companies -->
-  <div class="col-lg-5">
-    <div class="card">
+  <div class="col-lg-7">
+    <div class="card h-100">
       <div class="card-header"><span>Top Companies</span></div>
       <div class="card-body p-0">
+        <?php if (empty($topCo)): ?>
+          <div class="text-center py-4 text-muted" style="font-size:13px">No applications yet.</div>
+        <?php else: ?>
         <table class="table table-hover mb-0">
-          <thead><tr>
-            <th class="ps-3">Company</th>
-            <th>Applications</th>
-            <th>Status</th>
-            <th>Volume</th>
-          </tr></thead>
-          <tbody>
-            <?php foreach ($topCo as $co): ?>
+          <thead>
             <tr>
+              <th class="ps-3">Company</th>
+              <th>Apps</th>
+              <th>Latest Status</th>
+              <th style="width:110px">Volume</th>
+            </tr>
+          </thead>
+          <tbody>
+            <?php foreach ($topCo as $co):
+              $maxCount = max(1, $topCo[0]['count']);
+              $barPct   = round($co['count'] / $maxCount * 100);
+            ?>
+            <tr style="cursor:pointer" onclick="window.location='<?= APP_URL ?>/applications.php?search=<?= urlencode($co['company']) ?>'">
               <td class="ps-3">
                 <div class="d-flex align-items-center gap-2">
-                  <div style="width:30px;height:30px;border-radius:8px;background:var(--bg-page);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--brand)">
-                    <?= strtoupper(substr($co['company'], 0, 1)) ?>
+                  <div class="company-logo-cell">
+                    <img
+                      src="https://logo.clearbit.com/<?= urlencode(strtolower(preg_replace('/\s+/', '', $co['company']))) ?>.com"
+                      alt=""
+                      onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+                      style="width:100%;height:100%;object-fit:contain;border-radius:6px;display:block">
+                    <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:var(--brand)">
+                      <?= strtoupper(substr($co['company'], 0, 1)) ?>
+                    </span>
                   </div>
-                  <?= h($co['company']) ?>
+                  <span style="font-weight:500;font-size:13px"><?= h($co['company']) ?></span>
                 </div>
               </td>
-              <td><?= $co['count'] ?></td>
-              <td><span class="badge rounded-pill badge-<?= $co['status'] ?>"><?= h(statusLabel($co['status'])) ?></span></td>
-              <td style="width:120px">
+              <td style="font-size:13px"><?= (int)$co['count'] ?></td>
+              <td>
+                <span class="badge rounded-pill badge-<?= $co['status'] ?>">
+                  <?= h(statusLabel($co['status'])) ?>
+                </span>
+              </td>
+              <td>
                 <div class="progress" style="height:5px;border-radius:4px;background:#f0f4f9">
-                  <div class="progress-bar bg-primary" style="width:<?= min(100, round($co['count'] / max(1, $topCo[0]['count']) * 100)) ?>%"></div>
+                  <div class="progress-bar" style="width:<?= $barPct ?>%;background:var(--brand);border-radius:4px"></div>
                 </div>
               </td>
             </tr>
             <?php endforeach; ?>
           </tbody>
         </table>
+        <?php endif; ?>
       </div>
     </div>
   </div>
 
 </div>
 
-<!-- ── Row 3: Recent Activity ────────────────────────────────────────────── -->
-<div class="row g-4 mt-0">
-  <div class="col-lg-5">
-    <div class="card">
-      <div class="card-header"><span>Recent Activity</span></div>
-      <div class="card-body p-0">
-        <?php foreach ($recentApps as $app): ?>
-        <div class="d-flex align-items-center gap-3 p-3 border-bottom">
-          <div style="width:36px;height:36px;border-radius:50%;background:var(--brand-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-            <i class="bi bi-briefcase text-primary" style="font-size:14px"></i>
+<!-- ── Recent Activity ────────────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-header">
+    <span>Recent Activity</span>
+    <a href="<?= APP_URL ?>/applications.php" style="font-size:12px;color:var(--brand);text-decoration:none">View all</a>
+  </div>
+  <?php if (empty($recentApps)): ?>
+    <div class="card-body text-center text-muted py-4" style="font-size:13px">
+      No applications yet. <a href="<?= APP_URL ?>/applications.php?action=new">Add your first one</a>.
+    </div>
+  <?php else: ?>
+  <div class="card-body p-0">
+    <div class="row g-0">
+      <?php foreach ($recentApps as $app): ?>
+      <div class="col-lg-4 col-md-6" style="border-bottom:1px solid var(--border)">
+        <a href="<?= APP_URL ?>/application-detail.php?id=<?= (int)$app['id'] ?>" class="activity-card">
+          <div class="activity-card__icon">
+            <i class="bi bi-briefcase"></i>
           </div>
-          <div class="flex-grow-1">
-            <div style="font-weight:600;font-size:13px"><?= h($app['job_title']) ?></div>
-            <div style="font-size:12px;color:var(--text-secondary)">At <?= h($app['company']) ?></div>
+          <div class="activity-card__body">
+            <div class="activity-card__title"><?= h($app['job_title']) ?></div>
+            <div class="activity-card__company"><?= h($app['company']) ?></div>
           </div>
           <span class="badge badge-<?= $app['status'] ?>"><?= h(statusLabel($app['status'])) ?></span>
-        </div>
-        <?php endforeach; ?>
-        <div class="text-center p-3">
-          <a href="<?= APP_URL ?>/applications.php" class="btn btn-sm btn-outline-primary">View All Activity</a>
-        </div>
+        </a>
       </div>
-    </div>
-  </div>
-
-  <!-- Stalled Applications (NEW — only shown when there are stalled apps) -->
-  <?php if ($stalledCount > 0): ?>
-  <div class="col-lg-7">
-    <div class="card stalled-card">
-      <div class="card-header" style="border-left:3px solid #f59e0b">
-        <span><i class="bi bi-clock-history me-2" style="color:#f59e0b"></i>Needs Follow-up</span>
-        <span style="font-size:12px;color:var(--text-secondary)">Stale for 7+ days</span>
-      </div>
-      <div class="card-body p-0">
-        <table class="table table-hover mb-0">
-          <thead><tr>
-            <th class="ps-3">Role</th>
-            <th>Status</th>
-            <th>Days Stale</th>
-            <th>Action</th>
-          </tr></thead>
-          <tbody>
-            <?php foreach ($stalled as $app): ?>
-            <tr>
-              <td class="ps-3">
-                <div style="font-weight:600;font-size:13px"><?= h($app['job_title']) ?></div>
-                <div style="font-size:12px;color:var(--text-secondary)"><?= h($app['company']) ?></div>
-              </td>
-              <td><span class="badge rounded-pill badge-<?= $app['status'] ?>"><?= h(statusLabel($app['status'])) ?></span></td>
-              <td>
-                <span style="font-size:13px;font-weight:600;color:#f59e0b">
-                  <?= (int)$app['days_stalled'] ?> days
-                </span>
-              </td>
-              <td>
-                <a href="<?= APP_URL ?>/application-detail.php?id=<?= $app['id'] ?>"
-                   class="btn btn-sm btn-outline-warning py-0 px-2" style="font-size:12px">
-                  Follow up
-                </a>
-              </td>
-            </tr>
-            <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
+      <?php endforeach; ?>
     </div>
   </div>
   <?php endif; ?>
-
 </div>
 
 <?php
 $content = ob_get_clean();
 
 $inlineScript = <<<JS
-const MONTH_LABELS   = $chartMonthLabels;
-const MONTH_DATA     = $chartMonthData;
-const STAGE_LABELS   = $chartStageLabels;
-const STAGE_DATA     = $chartStageData;
-const FUNNEL_DATA    = $chartFunnelData;
-initAnalytics();
+(function() {
+  const MONTH_LABELS = {$chartMonthLabels};
+  const MONTH_DATA   = {$chartMonthData};
+
+  // ── Timeline chart ──────────────────────────────────────────────────────────
+  var ctxEl = document.getElementById('chartTimeline');
+  if (ctxEl && typeof Chart !== 'undefined') {
+    new Chart(ctxEl, {
+      type: 'line',
+      data: {
+        labels: MONTH_LABELS,
+        datasets: [{
+          label: 'Applications',
+          data: MONTH_DATA,
+          borderColor: '#1a73e8',
+          backgroundColor: 'rgba(26,115,232,0.07)',
+          borderWidth: 2.5,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: '#1a73e8',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1a1a2e',
+            titleColor: '#fff',
+            bodyColor: '#e5e7eb',
+            padding: 10,
+            cornerRadius: 8,
+            callbacks: {
+              label: function(ctx) {
+                return '  ' + ctx.parsed.y + ' application' + (ctx.parsed.y !== 1 ? 's' : '');
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 1, color: '#9ca3af', font: { size: 11 } },
+            grid: { color: '#f0f4f9' },
+            border: { display: false }
+          },
+          x: {
+            ticks: { color: '#9ca3af', font: { size: 11 } },
+            grid: { display: false },
+            border: { display: false }
+          }
+        }
+      }
+    });
+  }
+
+  // ── Animate progress bars (funnel + stage rows) ─────────────────────────────
+  // Use data-width attribute so we can animate from 0 → target
+  function animateBars(selector) {
+    document.querySelectorAll(selector).forEach(function(el) {
+      var target = el.getAttribute('data-width') || '0';
+      el.style.width = '0%';
+      el.style.transition = 'width 0.8s cubic-bezier(.4,0,.2,1)';
+      setTimeout(function() { el.style.width = target + '%'; }, 100);
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      animateBars('.funnel-step__fill');
+      animateBars('.stage-row__fill');
+    });
+  } else {
+    animateBars('.funnel-step__fill');
+    animateBars('.stage-row__fill');
+  }
+
+})();
 JS;
 
 include __DIR__ . '/../views/partials/header.php';
