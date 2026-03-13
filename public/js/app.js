@@ -143,7 +143,7 @@ function quickStatus(appId, status) {
 function initAnalytics() {
   if (typeof Chart === 'undefined') return;
 
-  // Timeline chart
+  // ── Timeline chart ──────────────────────────────────────────────────────
   const ctxTimeline = document.getElementById('chartTimeline');
   if (ctxTimeline && window.MONTH_LABELS) {
     new Chart(ctxTimeline, {
@@ -170,6 +170,48 @@ function initAnalytics() {
       }
     });
   }
+
+  // ── Funnel bar animation ────────────────────────────────────────────────
+  // Animate each funnel bar from 0% → its target width after a short delay.
+  // Uses IntersectionObserver so the animation triggers when the funnel
+  // scrolls into view, not immediately on page load.
+  const funnelFills = document.querySelectorAll('.funnel-step__fill');
+
+  if (funnelFills.length > 0) {
+    const animateFunnel = () => {
+      funnelFills.forEach((bar, i) => {
+        const targetWidth = bar.dataset.width + '%';
+        // Stagger each bar by 120ms so they animate one after another
+        setTimeout(() => {
+          bar.style.width = targetWidth;
+        }, i * 120);
+      });
+    };
+
+    // Use IntersectionObserver if available, otherwise animate immediately
+    if ('IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            animateFunnel();
+            observer.disconnect(); // Only animate once
+          }
+        });
+      }, { threshold: 0.3 });
+
+      const funnelPanel = document.getElementById('funnelPanel');
+      if (funnelPanel) observer.observe(funnelPanel);
+    } else {
+      animateFunnel();
+    }
+  }
+
+  // ── Insight chip dismiss ────────────────────────────────────────────────
+  // Allow users to dismiss non-alert chips by clicking an X (optional UX).
+  // Alert chips (stalled apps) are always shown and link to applications.
+  document.querySelectorAll('.insight-chip:not([href])').forEach(chip => {
+    chip.style.cursor = 'default';
+  });
 }
 
 // ── Resume Page ─────────────────────────────────────────────────────────────
