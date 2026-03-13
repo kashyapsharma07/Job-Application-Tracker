@@ -243,13 +243,162 @@ h1, h2, h3, h4, h5, .brand-name, .sidebar-brand {
   background: var(--card-bg);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: 20px 20px 20px 23px;
   box-shadow: var(--shadow);
+  position: relative;
+  overflow: hidden;
 }
+
+/* Coloured left accent stripe per card type */
+.stat-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 2px 0 0 2px;
+}
+.stat-card--blue::before  { background: var(--brand); }
+.stat-card--yellow::before { background: var(--interviewing); }
+.stat-card--green::before  { background: var(--offer); }
+.stat-card--red::before    { background: var(--rejected); }
 
 .stat-card .stat-label { font-size: 13px; color: var(--text-secondary); margin-bottom: 6px; }
 .stat-card .stat-value { font-size: 28px; font-weight: 700; font-family: 'Sora', sans-serif; color: var(--text-primary); }
 .stat-card .stat-badge { font-size: 12px; font-weight: 600; }
+
+/* ── Insight Chips ──────────────────────────── */
+.insight-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.insight-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: box-shadow .15s, border-color .15s, color .15s;
+  cursor: default;
+}
+
+.insight-chip[href] {
+  cursor: pointer;
+}
+
+.insight-chip[href]:hover {
+  box-shadow: var(--shadow);
+  border-color: #c0c8d4;
+  color: var(--text-primary);
+}
+
+/* Alert chip — orange, for stalled apps warning */
+.insight-chip--alert {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #92400e;
+}
+.insight-chip--alert[href]:hover {
+  border-color: #f59e0b;
+  background: #fef3c7;
+}
+
+/* Positive chip — green, for good news */
+.insight-chip--positive {
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+/* Info chip — blue, for neutral stats */
+.insight-chip--info {
+  border-color: #93c5fd;
+  background: var(--brand-light);
+  color: #1e40af;
+}
+.insight-chip--info[href]:hover {
+  border-color: var(--brand);
+}
+
+/* ── Funnel Panel ───────────────────────────── */
+.funnel-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-radius: var(--radius-sm);
+  transition: background .1s;
+}
+
+.funnel-step[href]:hover {
+  background: var(--bg-page);
+  padding-left: 8px;
+  padding-right: 8px;
+  margin-left: -8px;
+  margin-right: -8px;
+}
+
+.funnel-step__meta {
+  display: flex;
+  flex-direction: column;
+  min-width: 110px;
+}
+
+.funnel-step__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.funnel-step__count {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Sora', sans-serif;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.funnel-step__track {
+  flex: 1;
+  height: 8px;
+  background: var(--bg-page);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.funnel-step__fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .7s cubic-bezier(.4,0,.2,1);
+}
+
+.funnel-step__pct {
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 36px;
+  text-align: right;
+}
+
+.funnel-arrow {
+  text-align: left;
+  padding-left: 6px;
+  font-size: 11px;
+  color: var(--border);
+  line-height: 1;
+  margin: -4px 0;
+}
+
+/* ── Stalled card accent ────────────────────── */
+.stalled-card .card-header {
+  border-left: 3px solid var(--interviewing);
+}
 
 /* ── Kanban Board ───────────────────────────── */
 .kanban-board {
