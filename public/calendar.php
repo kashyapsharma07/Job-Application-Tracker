@@ -4,6 +4,7 @@ Auth::require();
 
 $userId   = Auth::id();
 $appModel = new Application();
+$remModel = new Reminder();
 
 $year  = (int)($_GET['year'] ?? date('Y'));
 $month = (int)($_GET['month'] ?? date('n'));
@@ -15,6 +16,7 @@ if ($month > 12) { $month = 1;  $year++; }
 $monthStr    = str_pad($month, 2, '0', STR_PAD_LEFT);
 $events      = $appModel->getCalendarEvents($userId, $year, $monthStr);
 $upcoming    = $appModel->getUpcomingEvents($userId, 5);
+$reminders   = $remModel->getAll($userId);
 $counts      = $appModel->countByStatus($userId);
 
 // Group events by day
@@ -117,12 +119,48 @@ ob_start();
     <div class="card mb-4">
       <div class="card-header"><span>Upcoming Events</span></div>
       <div class="card-body p-0">
-        <?php if (empty($upcoming)): ?>
+        <?php
+        // Merge upcoming events and reminders, sorted by date
+        $allEvents = [];
+        
+        // Add application events
+        foreach ($upcoming as $ev) {
+          $allEvents[] = [
+            'event_date' => $ev['event_date'],
+            'title' => $ev['title'],
+            'company' => $ev['company'] ?? '',
+            'event_type' => $ev['event_type'] ?? 'note',
+            'is_reminder' => false
+          ];
+        }
+        
+        // Add reminders
+        foreach ($reminders as $rem) {
+          if (strtotime($rem['remind_at']) > time()) { // Only future reminders
+            $allEvents[] = [
+              'event_date' => $rem['remind_at'],
+              'title' => $rem['title'],
+              'company' => $rem['application_id'] ? '📒 Reminder' : '',
+              'event_type' => 'reminder',
+              'is_reminder' => true
+            ];
+          }
+        }
+        
+        // Sort by date
+        usort($allEvents, function($a, $b) {
+          return strtotime($a['event_date']) - strtotime($b['event_date']);
+        });
+        
+        // Limit to 5
+        $allEvents = array_slice($allEvents, 0, 5);
+        
+        if (empty($allEvents)): ?>
           <p class="text-center text-muted py-4" style="font-size:13px">No upcoming events</p>
         <?php else: ?>
         <?php
-        $typeColor = ['interview'=>'var(--brand)','deadline'=>'var(--rejected)','follow_up'=>'var(--offer)','note'=>'#92400e'];
-        foreach ($upcoming as $ev):
+        $typeColor = ['interview'=>'var(--brand)','deadline'=>'var(--rejected)','follow_up'=>'var(--offer)','note'=>'#92400e','reminder'=>'#8b5cf6'];
+        foreach ($allEvents as $ev):
           $color = $typeColor[$ev['event_type']] ?? 'var(--text-secondary)';
         ?>
         <div class="d-flex gap-3 p-3 border-bottom">
@@ -132,15 +170,18 @@ ob_start();
           </div>
           <div>
             <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:<?= $color ?>">
-              <?= h(str_replace('_',' ',strtoupper($ev['event_type']))) ?>
+              <?= $ev['is_reminder'] ? '🔔 REMINDER' : h(str_replace('_',' ',strtoupper($ev['event_type']))) ?>
             </div>
             <div style="font-weight:600;font-size:13px"><?= h($ev['title']) ?></div>
-            <div style="font-size:12px;color:var(--text-secondary)"><?= h($ev['company']) ?> &bull; <?= date('g:i A',strtotime($ev['event_date'])) ?></div>
+            <div style="font-size:12px;color:var(--text-secondary)"><?php 
+              if ($ev['company']) echo h($ev['company']) . ' &bull; '; 
+              echo date('g:i A',strtotime($ev['event_date'])); 
+            ?></div>
           </div>
         </div>
         <?php endforeach; ?>
         <div class="text-center p-3">
-          <a href="#" class="text-decoration-none" style="font-size:13px;color:var(--brand)">View All Events</a>
+          <a href="reminders.php" class="text-decoration-none" style="font-size:13px;color:var(--brand)">View All Reminders</a>
         </div>
         <?php endif; ?>
       </div>

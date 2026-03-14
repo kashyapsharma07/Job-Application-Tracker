@@ -118,10 +118,10 @@ ob_start();
           </div>
           <div class="mb-3">
             <label class="form-label">Application (optional)</label>
-            <select name="application_id" class="form-select">
+            <select name="application_id" class="form-select" id="reminderAppSelect">
               <option value="">— No application —</option>
               <?php foreach ($apps as $app): ?>
-              <option value="<?= $app['id'] ?>"><?= h($app['company'] . ' — ' . $app['job_title']) ?></option>
+              <option value="<?= $app['id'] ?>" data-applied-at="<?= $app['applied_at'] ?>"><?= h($app['company'] . ' — ' . $app['job_title']) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -143,6 +143,24 @@ ob_start();
     </div>
   </div>
 </div>
+
+<script>
+// Auto-fill Remind At field when application is selected
+document.getElementById('reminderAppSelect').addEventListener('change', function() {
+  const selectedOption = this.options[this.selectedIndex];
+  const appliedAt = selectedOption.getAttribute('data-applied-at');
+  const remindAtField = document.querySelector('input[name="remind_at"]');
+  
+  if (appliedAt && appliedAt.trim()) {
+    // Convert date format from YYYY-MM-DD to YYYY-MM-DDTHH:MM for datetime-local input
+    const dateTime = appliedAt.split('T')[0] + 'T09:00'; // Set to 9 AM on that day
+    remindAtField.value = dateTime;
+  } else {
+    remindAtField.value = '';
+  }
+});
+</script>
+
 <?php
 $content = ob_get_clean();
 include __DIR__ . '/../views/partials/header.php';

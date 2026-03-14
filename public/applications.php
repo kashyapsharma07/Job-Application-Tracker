@@ -1,4 +1,5 @@
 <?php
+require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../src/bootstrap.php';
 Auth::require();
 
@@ -59,9 +60,25 @@ $counts = $appModel->countByStatus($userId);
 $pageTitle   = 'Applications';
 $currentPage = 'applications';
 $openNew     = ($_GET['action'] ?? '') === 'new';
+$success     = $_GET['success'] ?? '';
 
 ob_start();
 ?>
+<!-- Success Message -->
+<?php if ($success === 'created'): ?>
+<div class="alert alert-success alert-dismissible fade show" role="alert" style="margin-bottom:16px;">
+  <i class="bi bi-check-circle me-2"></i>
+  <strong>Success!</strong> New application added successfully.
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<?php elseif ($success === 'updated'): ?>
+<div class="alert alert-success alert-dismissible fade show" role="alert" style="margin-bottom:16px;">
+  <i class="bi bi-check-circle me-2"></i>
+  <strong>Success!</strong> Application updated successfully.
+  <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<?php endif; ?>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
     <h1 style="font-size:22px;margin:0">Applications</h1>
@@ -80,7 +97,7 @@ ob_start();
 
 <!-- Status filter tabs -->
 <div class="d-flex gap-2 mb-4 flex-wrap">
-  <a href="<?= APP_URL ?>/applications.php" class="btn btn-sm <?= empty($filters['status']) ? 'btn-dark' : 'btn-outline-secondary' ?>">
+  <a href="applications.php" class="btn btn-sm <?= empty($filters['status']) ? 'btn-dark' : 'btn-outline-secondary' ?>">
     All <span class="badge bg-secondary ms-1"><?= array_sum($counts) ?></span>
   </a>
   <?php foreach (['wishlist', 'applied', 'interviewing', 'offer', 'rejected'] as $s): ?>

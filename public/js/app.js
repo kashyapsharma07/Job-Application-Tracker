@@ -77,7 +77,8 @@ function initApplicationsPage() {
       saveBtn.textContent = 'Save Application';
       if (res.ok) {
         modal.hide();
-        window.location.reload();
+        // Redirect to applications page with action=new
+        window.location = '/jobtracker/applications.php?action=new';
       } else {
         alert(res.error || 'An error occurred.');
       }

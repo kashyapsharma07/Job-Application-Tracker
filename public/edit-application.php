@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="mb-3">
                 <label class="form-label">Job URL</label>
-                <input type="url" name="job_url" class="form-control" value="<?= htmlspecialchars($application['job_url'] ?? '') ?>">
+                <input type="text" name="job_url" class="form-control" value="<?= htmlspecialchars($application['job_url'] ?? '') ?>" placeholder="e.g., https://example.com/job">
             </div>
             <div class="mb-3">
                 <label class="form-label">Salary Range</label>
