@@ -77,7 +77,30 @@ if ($counts['offer'] > 0) {
     ];
 }
 
-// ── Chart.js month data ────────────────────────────────────────────────────────
+// ── Get time period data (week/month/year) ────────────────────────────────────
+$timeView = $_GET['view'] ?? 'month'; // Default to month
+
+// Week data
+$byWeek = $appModel->countByWeek($userId, 12);
+$weekLabels = [];
+$weekData   = [];
+for ($i = 11; $i >= 0; $i--) {
+    $weekStart = date('M d', strtotime("-{$i} weeks"));
+    $weekLabels[] = 'W' . date('W', strtotime("-{$i} weeks"));
+    $weekData[] = 0;
+}
+foreach ($byWeek as $row) {
+    $weekNum = (int)substr($row['week'], -2);
+    $idx = array_search('W' . str_pad($weekNum, 2, '0', STR_PAD_LEFT), $weekLabels);
+    if ($idx === false) {
+        $idx = array_search('W' . ltrim(str_pad($weekNum, 2, '0', STR_PAD_LEFT), '0'), $weekLabels);
+    }
+    if ($idx !== false) {
+        $weekData[$idx] = (int)$row['count'];
+    }
+}
+
+// Month data (already have $byMonth)
 $monthLabels = [];
 $monthData   = [];
 for ($i = 5; $i >= 0; $i--) {
@@ -92,9 +115,41 @@ foreach ($byMonth as $row) {
     }
 }
 
+// Year data
+$byYear = $appModel->countByYear($userId, 3);
+$yearLabels = [];
+$yearData   = [];
+for ($i = 2; $i >= 0; $i--) {
+    $yearLabels[] = date('Y', strtotime("-{$i} years"));
+    $yearData[] = 0;
+}
+foreach ($byYear as $row) {
+    $idx = array_search($row['year'], $yearLabels);
+    if ($idx !== false) {
+        $yearData[$idx] = (int)$row['count'];
+    }
+}
+
+// Select active labels/data based on view
+$chartLabels = $monthLabels;
+$chartData   = $monthData;
+if ($timeView === 'week') {
+    $chartLabels = $weekLabels;
+    $chartData   = $weekData;
+} elseif ($timeView === 'year') {
+    $chartLabels = $yearLabels;
+    $chartData   = $yearData;
+}
+
 // JSON-encode for inline JS
+$chartLabels_json = json_encode($chartLabels);
+$chartData_json   = json_encode($chartData);
 $chartMonthLabels = json_encode($monthLabels);
 $chartMonthData   = json_encode($monthData);
+$chartWeekLabels  = json_encode($weekLabels);
+$chartWeekData    = json_encode($weekData);
+$chartYearLabels  = json_encode($yearLabels);
+$chartYearData    = json_encode($yearData);
 $funnelJson       = json_encode($funnel);
 
 $stageColors = [
@@ -183,9 +238,13 @@ ob_start();
   <!-- Timeline chart -->
   <div class="col-lg-7">
     <div class="card h-100">
-      <div class="card-header">
+      <div class="card-header d-flex justify-content-between align-items-center">
         <span>Applications Over Time</span>
-        <span style="font-size:12px;color:var(--text-secondary)">Last 6 months</span>
+        <div class="btn-group btn-group-sm" role="group">
+          <a href="?view=week" class="btn btn-outline-secondary <?= $timeView === 'week' ? 'active' : '' ?>" style="font-size:11px">Week</a>
+          <a href="?view=month" class="btn btn-outline-secondary <?= $timeView === 'month' ? 'active' : '' ?>" style="font-size:11px">Month</a>
+          <a href="?view=year" class="btn btn-outline-secondary <?= $timeView === 'year' ? 'active' : '' ?>" style="font-size:11px">Year</a>
+        </div>
       </div>
       <div class="card-body" style="padding:20px">
         <canvas id="chartTimeline" style="max-height:220px"></canvas>
@@ -356,19 +415,30 @@ $content = ob_get_clean();
 
 $inlineScript = <<<JS
 (function() {
+  const WEEK_LABELS  = {$chartWeekLabels};
+  const WEEK_DATA    = {$chartWeekData};
   const MONTH_LABELS = {$chartMonthLabels};
   const MONTH_DATA   = {$chartMonthData};
+  const YEAR_LABELS  = {$chartYearLabels};
+  const YEAR_DATA    = {$chartYearData};
 
-  // ── Timeline chart ──────────────────────────────────────────────────────────
-  var ctxEl = document.getElementById('chartTimeline');
-  if (ctxEl && typeof Chart !== 'undefined') {
-    new Chart(ctxEl, {
+  let chartInstance = null;
+
+  function initChartWithData(labels, data) {
+    const ctxEl = document.getElementById('chartTimeline');
+    if (!ctxEl || typeof Chart === 'undefined') return;
+    
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+    
+    chartInstance = new Chart(ctxEl, {
       type: 'line',
       data: {
-        labels: MONTH_LABELS,
+        labels: labels,
         datasets: [{
           label: 'Applications',
-          data: MONTH_DATA,
+          data: data,
           borderColor: '#1a73e8',
           backgroundColor: 'rgba(26,115,232,0.07)',
           borderWidth: 2.5,
@@ -415,6 +485,25 @@ $inlineScript = <<<JS
       }
     });
   }
+
+  // Initialize with current view data
+  const currentView = new URLSearchParams(window.location.search).get('view') || 'month';
+  if (currentView === 'week') {
+    initChartWithData(WEEK_LABELS, WEEK_DATA);
+  } else if (currentView === 'year') {
+    initChartWithData(YEAR_LABELS, YEAR_DATA);
+  } else {
+    initChartWithData(MONTH_LABELS, MONTH_DATA);
+  }
+
+  // Handle time period button clicks
+  document.querySelectorAll('.card-header .btn-group-sm a').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+      const view = new URLSearchParams(this.href).get('view') || 'month';
+      // Page will reload with new view, but this could be enhanced with AJAX
+    });
+  });
+
 
   // ── Animate progress bars (funnel + stage rows) ─────────────────────────────
   // Use data-width attribute so we can animate from 0 → target

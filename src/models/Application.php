@@ -134,6 +134,28 @@ class Application {
         return $stmt->fetchAll();
     }
 
+    public function countByWeek(int $userId, int $weeks = 12): array {
+        $stmt = $this->db->prepare(
+            'SELECT DATE_FORMAT(created_at, "%Y-W%u") as week, COUNT(*) as count
+             FROM applications
+             WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? WEEK)
+             GROUP BY week ORDER BY week ASC'
+        );
+        $stmt->execute([$userId, $weeks]);
+        return $stmt->fetchAll();
+    }
+
+    public function countByYear(int $userId, int $years = 3): array {
+        $stmt = $this->db->prepare(
+            'SELECT YEAR(created_at) as year, COUNT(*) as count
+             FROM applications
+             WHERE user_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? YEAR)
+             GROUP BY year ORDER BY year ASC'
+        );
+        $stmt->execute([$userId, $years]);
+        return $stmt->fetchAll();
+    }
+
     public function topCompanies(int $userId, int $limit = 5): array {
         $stmt = $this->db->prepare(
             'SELECT company, COUNT(*) as count, MAX(status) as status

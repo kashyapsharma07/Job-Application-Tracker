@@ -19,6 +19,36 @@ $upcoming    = $appModel->getUpcomingEvents($userId, 5);
 $reminders   = $remModel->getAll($userId);
 $counts      = $appModel->countByStatus($userId);
 
+//Create a map of dates to events for calender display
+$eventsByDate = [];
+
+//Map application events
+foreach ($upcoming as $ev) {
+  $dateKey = date('Y-m-d', strtotime($ev['event_date']));
+  if (!isset($eventsByDate[$dateKey])) {
+    $eventsByDate[$dateKey] = [];
+  }
+  $eventsByDate[$dateKey][] = [
+    'title' => $ev['title'],
+    'type' => $ev['event_type'],
+    'is_reminder' => false
+  ];
+}
+
+//Map reminders
+foreach ($reminders as $rem) {
+  if (strtotime($rem['remind_at']) > time()) {
+    $dateKey = date('Y-m-d', strtotime($rem['remind_at']));
+    if (!isset($eventsByDate[$dateKey])) {
+      $eventsByDate[$dateKey] = [];
+    }
+    $eventsByDate[$dateKey][] = [
+      'title' => $rem['title'],
+      'type' => 'reminder',
+      'is_reminder' => true
+    ];
+  }
+}
 // Group events by day
 $eventsByDay = [];
 foreach ($events as $ev) {
@@ -90,13 +120,28 @@ ob_start();
               $isToday = ($d === $today && $month === $thisMonth && $year === $thisYear);
               echo '<div class="cal-day' . ($isToday ? ' today' : '') . '">';
               echo '<div class="cal-day-num">' . $d . '</div>';
-              if (!empty($eventsByDay[$d])) {
-                  foreach (array_slice($eventsByDay[$d], 0, 3) as $ev) {
-                      $cls = $evTypeColor[$ev['event_type']] ?? 'cal-event-note';
-                      echo '<div class="cal-event ' . $cls . '">' . htmlspecialchars($ev['title']) . '</div>';
+              
+              // Combine events from both sources
+              $dateKey = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . str_pad($d, 2, '0', STR_PAD_LEFT);
+              $allDayEvents = array_merge($eventsByDay[$d] ?? [], $eventsByDate[$dateKey] ?? []);
+              
+              if (!empty($allDayEvents)) {
+                  foreach (array_slice($allDayEvents, 0, 3) as $ev) {
+                      if (isset($ev['event_type'])) {
+                          // From eventsByDay (application events)
+                          $cls = $evTypeColor[$ev['event_type']] ?? 'cal-event-note';
+                          echo '<div class="cal-event ' . $cls . '">' . htmlspecialchars($ev['title']) . '</div>';
+                      } else {
+                          // From eventsByDate (upcoming events and reminders)
+                          $badge = $ev['is_reminder'] ? '🔔' : '📌';
+                          $color = $ev['type'] === 'interview' ? 'cal-event-interview' : 
+                                   ($ev['type'] === 'reminder' ? 'cal-event-note' : 
+                                   ($ev['type'] === 'deadline' ? 'cal-event-deadline' : 'cal-event-follow_up'));
+                          echo '<div class="cal-event ' . $color . '">' . $badge . ' ' . htmlspecialchars(substr($ev['title'], 0, 20)) . '</div>';
+                      }
                   }
-                  if (count($eventsByDay[$d]) > 3) {
-                      echo '<div class="cal-event" style="background:#f0f4f9;color:var(--text-secondary)">+' . (count($eventsByDay[$d])-3) . ' more</div>';
+                  if (count($allDayEvents) > 3) {
+                      echo '<div class="cal-event" style="background:#f0f4f9;color:var(--text-secondary)">+' . (count($allDayEvents)-3) . ' more</div>';
                   }
               }
               echo '</div>';
