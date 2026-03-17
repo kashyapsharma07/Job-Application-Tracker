@@ -28,6 +28,7 @@ class Auth
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_plan'] = $user['plan'];
         $_SESSION['logged_in'] = true;
+        $_SESSION['user_ip']   = self::getClientIp();
     }
 
     public static function logout(): void
@@ -70,6 +71,11 @@ class Auth
         if (!self::check()) {
             redirect('/login.php');
         }
+        // IP address binding - detect session hijacking
+        if (isset($_SESSION['user_ip']) && $_SESSION['user_ip'] !== self::getClientIp()) {
+            self::logout();
+            redirect('/login.php?error=security');
+        }
     }
 
     public static function csrfToken(): string
@@ -85,5 +91,21 @@ class Auth
     {
         self::start();
         return hash_equals($_SESSION[CSRF_TOKEN_NAME] ?? '', $token);
+    }
+
+    private static function getClientIp(): string
+    {
+        // Check for IP from shared internet (behind proxy)
+        if (!empty($_SERVER['HTTP_CLIENT_IP'])) {
+            return $_SERVER['HTTP_CLIENT_IP'];
+        }
+        // Check for IP from forwarded internet (behind firewall)
+        elseif (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+            return explode(',', $_SERVER['HTTP_X_FORWARDED_FOR'])[0];
+        }
+        // Normal IP
+        else {
+            return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        }
     }
 }
