@@ -27,6 +27,7 @@ class Auth
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_plan'] = $user['plan'];
+        $_SESSION['user_role'] = $user['role'] ?? 'user';
         $_SESSION['logged_in'] = true;
         $_SESSION['user_ip']   = self::getClientIp();
     }
@@ -57,6 +58,7 @@ class Auth
             'name'  => $_SESSION['user_name'] ?? '',
             'email' => $_SESSION['user_email'] ?? '',
             'plan'  => $_SESSION['user_plan'] ?? 'free',
+            'role'  => $_SESSION['user_role'] ?? 'user',
         ];
     }
 
@@ -106,6 +108,25 @@ class Auth
         // Normal IP
         else {
             return $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        }
+    }
+
+
+    // Check if current user is admin
+    public static function isAdmin(): bool
+    {
+        self::start();
+        return ($_SESSION['user_role'] ?? 'user') === 'admin';
+    }
+
+    // Require admin access - use at top of admin pages
+    public static function requireAdmin(): void
+    {
+        self::start();
+        if (!self::isAdmin()) {
+            http_response_code(403);
+            echo 'Access Denied. Admin only.';
+            exit;
         }
     }
 }

@@ -46,6 +46,26 @@ $currentPage = $currentPage ?? '';
       </a>
     </nav>
 
+    <?php if (Auth::isAdmin()): ?>
+    <!-- Admin Section -->
+    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+      <p style="font-size:11px; text-transform:uppercase; color:#9ca3af; margin:0 16px 12px; font-weight:600; letter-spacing:0.5px">
+        <i class="bi bi-shield-lock"></i> Admin
+      </p>
+      <nav class="sidebar-nav">
+        <a href="<?= APP_URL ?>/admin/dashboard.php" class="nav-item <?= $currentPage==='admin'?'active':'' ?>">
+          <i class="bi bi-speedometer2"></i> <span>Admin Panel</span>
+        </a>
+        <a href="<?= APP_URL ?>/admin/users.php" class="nav-item <?= $currentPage==='admin'?'active':'' ?>">
+          <i class="bi bi-people"></i> <span>Users</span>
+        </a>
+        <a href="<?= APP_URL ?>/admin/login-logs.php" class="nav-item <?= $currentPage==='admin'?'active':'' ?>">
+          <i class="bi bi-clock-history"></i> <span>Login Logs</span>
+        </a>
+      </nav>
+    </div>
+    <?php endif; ?>
+
     <div class="sidebar-footer">
       <a href="<?= APP_URL ?>/settings.php" class="nav-item <?= $currentPage==='settings'?'active':'' ?>">
         <i class="bi bi-gear"></i> <span>Settings</span>
