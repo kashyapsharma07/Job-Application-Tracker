@@ -23,6 +23,16 @@ class Auth
     {
         self::start();
         session_regenerate_id(true);
+        
+        // Log the login event
+        try {
+            Database::getInstance()->prepare(
+                'INSERT INTO login_logs (user_id, ip_address, status) VALUES (?, ?, ?)'
+            )->execute([$user['id'], self::getClientIp(), 'success']);
+        } catch (Exception $e) {
+            // Login table might not exist yet - that's okay
+        }
+        
         $_SESSION['user_id']   = $user['id'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['user_email'] = $user['email'];
