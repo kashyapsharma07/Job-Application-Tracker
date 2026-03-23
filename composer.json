@@ -1,0 +1,14 @@
+{
+    "name": "jobtracker/app",
+    "description": "Job Application Tracker with 2FA",
+    "type": "project",
+    "require": {
+        "pragmarx/google2fa": "^8.0",
+        "bacon/bacon-qr-code": "^2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "": "src/"
+        }
+    }
+}

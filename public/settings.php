@@ -30,18 +30,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['user_name'] = $name;
             flash('success', 'Profile updated.');
         }
-    }
-
-    if ($action === 'notifications') {
+    } elseif ($action === 'notifications') {
         $userModel->update($userId, [
             'email_alerts'        => !empty($_POST['email_alerts']) ? 1 : 0,
             'interview_reminders' => !empty($_POST['interview_reminders']) ? 1 : 0,
             'marketing_comms'     => !empty($_POST['marketing_comms']) ? 1 : 0,
         ]);
         flash('success', 'Notification preferences saved.');
-    }
-
-    if ($action === 'password') {
+    } elseif ($action === 'password') {
         $current  = $_POST['current_password'] ?? '';
         $new      = $_POST['new_password'] ?? '';
         $confirm  = $_POST['confirm_password'] ?? '';
@@ -60,6 +56,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $userModel->updatePassword($userId, $new);
             flash('success', 'Password updated.');
+        }
+    } elseif ($action === '2fa_setup') {
+        // Just enable the setup flag - actual setup happens at next login
+        $db = Database::getInstance();
+        $stmt = $db->prepare('UPDATE users SET twofa_setup_required = 1 WHERE id = ?');
+        $stmt->execute([$userId]);
+        flash('success', '2FA will be set up on your next login.');
+    } elseif ($action === '2fa_disable') {
+        $password = $_POST['confirmation_password'] ?? '';
+        if (!$userModel->verifyPassword($password, $user['password_hash'])) {
+            flash('error', 'Password is incorrect. 2FA not disabled.');
+        } else {
+            $db = Database::getInstance();
+            $stmt = $db->prepare('UPDATE users SET twofa_enabled = 0, twofa_secret = NULL, twofa_setup_required = 0 WHERE id = ?');
+            $stmt->execute([$userId]);
+            flash('success', '2FA has been disabled.');
         }
     }
 
@@ -139,6 +151,51 @@ ob_start();
           </div>
           <button type="submit" class="btn btn-outline-primary">Update Password</button>
         </form>
+      </div>
+    </div>
+
+    <!-- Two-Factor Authentication -->
+    <div class="card mb-4">
+      <div class="card-header"><span>Two-Factor Authentication (2FA)</span></div>
+      <div class="card-body">
+        <div class="d-flex align-items-center justify-content-between py-3">
+          <div>
+            <div style="font-weight:500;font-size:14px;margin-bottom:4px">Google Authenticator</div>
+            <div style="font-size:12px;color:var(--text-secondary)">
+              <?php if (!empty($user['twofa_enabled']) && $user['twofa_enabled'] == 1): ?>
+                <span style="color:var(--success)">✓ Enabled</span> - Your account is protected with 2FA
+              <?php elseif (!empty($user['twofa_setup_required']) && $user['twofa_setup_required'] == 1): ?>
+                <span style="color:#f59e0b">⏳ Setup Pending</span> - 2FA will be set up at next login
+              <?php else: ?>
+                Not yet enabled - Add extra security to your account
+              <?php endif; ?>
+            </div>
+          </div>
+        </div>
+        
+        <?php if (empty($user['twofa_enabled']) && empty($user['twofa_setup_required'])): ?>
+        <form method="POST" class="mt-3">
+          <input type="hidden" name="csrf_token" value="<?= Auth::csrfToken() ?>">
+          <input type="hidden" name="action" value="2fa_setup">
+          <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-shield-lock me-1"></i>Enable 2FA</button>
+        </form>
+        <?php elseif (!empty($user['twofa_setup_required'])): ?>
+        <div class="mt-3">
+          <p style="font-size:12px;color:var(--text-secondary);margin:0">Setup will begin when you logout and login again.</p>
+        </div>
+        <?php else: ?>
+        <form method="POST" class="mt-3" onsubmit="return confirm('Are you sure? You will need to use your authenticator app to log in.')">
+          <input type="hidden" name="csrf_token" value="<?= Auth::csrfToken() ?>">
+          <input type="hidden" name="action" value="2fa_disable">
+          <div class="mb-2">
+            <label class="form-label">
+              <small>Confirm your password to disable 2FA:</small>
+            </label>
+            <input type="password" name="confirmation_password" class="form-control form-control-sm" required>
+          </div>
+          <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-x-circle me-1"></i>Disable 2FA</button>
+        </form>
+        <?php endif; ?>
       </div>
     </div>
 

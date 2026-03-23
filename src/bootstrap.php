@@ -1,6 +1,10 @@
 <?php
 // src/bootstrap.php
 
+// Load Composer packages (2FA, JWT, QR Code)
+require_once __DIR__ . '/../vendor/autoload.php';
+use PragmaRX\Google2FA\Google2FA;
+
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/helpers/Auth.php';

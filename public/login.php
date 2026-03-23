@@ -19,8 +19,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $userModel = new User();
             $user = $userModel->findByEmail($email);
             if ($user && $userModel->verifyPassword($password, $user['password_hash'])) {
-                Auth::login($user);
-                redirect('/dashboard.php');
+                // Check if user needs to setup 2FA first
+                if (!empty($user['twofa_setup_required']) && $user['twofa_setup_required'] == 1) {
+                    // Store user info in session for 2FA setup (not yet logged in)
+                    $_SESSION['pending_2fa_user_id'] = $user['id'];
+                    $_SESSION['pending_2fa_email'] = $user['email'];
+                    redirect('/2fa-setup.php');
+                } elseif (!empty($user['twofa_enabled']) && $user['twofa_enabled'] == 1) {
+                    // User has 2FA enabled, need to verify code
+                    $_SESSION['pending_2fa_user_id'] = $user['id'];
+                    $_SESSION['pending_2fa_email'] = $user['email'];
+                    redirect('/2fa-login.php');
+                } else {
+                    // No 2FA, proceed with normal login
+                    Auth::login($user);
+                    redirect('/dashboard.php');
+                }
             } else {
                 $error = 'Invalid email or password.';
             }
