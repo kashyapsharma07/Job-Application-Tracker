@@ -3,18 +3,16 @@ require_once __DIR__ . '/../../src/bootstrap.php';
 Auth::require();
 Auth::requireAdmin();
 
-$userId = (int)($_GET['id'] ?? 0);
+$userId = (int)base64_decode($_GET['id'] ?? '');
 $userModel = new User();
 
 if ($userId <= 0) {
-    header('Location: /admin/users.php');
-    exit;
+    redirect('/admin/users.php');
 }
 
 $user = $userModel->findById($userId);
 if (!$user) {
-    header('Location: /admin/users.php?error=not_found');
-    exit;
+    redirect('/admin/users.php?error=not_found');
 }
 
 // Handle role change
@@ -22,8 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['role'])) {
     if (Auth::verifyCsrf($_POST['csrf_token'] ?? '')) {
         $newRole = $_POST['role'] === 'admin' ? 'admin' : 'user';
         $userModel->updateRole($userId, $newRole);
-        header('Location: /admin/user-detail.php?id=' . $userId . '&msg=updated');
-        exit;
+        redirect('/admin/user-detail.php?id=' . base64_encode($userId) . '&msg=updated');
     }
 }
 
@@ -40,7 +37,7 @@ $currentPage = 'admin';
 ob_start();
 ?>
 <div style="margin-bottom:20px">
-  <a href="/admin/users.php" style="color:#1a73e8; text-decoration:none">← Back to Users</a>
+  <a href="<?= APP_URL ?>/admin/users.php" style="color:#1a73e8; text-decoration:none">← Back to Users</a>
 </div>
 
 <div class="row">

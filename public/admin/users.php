@@ -13,7 +13,7 @@ $currentPage = 'admin';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     if (Auth::verifyCsrf($_POST['csrf_token'] ?? '')) {
         $userModel->deleteUser($_POST['user_id']);
-        header('Location: /admin/users.php?msg=deleted');
+        header('Location: jobtracker/admin/users.php?msg=deleted');
         exit;
     }
 }
@@ -63,7 +63,7 @@ ob_start();
             <?= date('M d, Y', strtotime($user['created_at'])) ?>
           </td>
           <td style="padding:12px 16px">
-            <a href="/admin/user-detail.php?id=<?= $user['id'] ?>" class="btn btn-sm btn-outline-secondary" style="font-size:12px">View</a>
+            <a href="<?= APP_URL ?>/admin/user-detail.php?id=<?= base64_encode($user['id']) ?>" class="btn btn-sm btn-outline-secondary" style="font-size:12px">View</a>
             <form method="POST" style="display:inline;" onsubmit="return confirm('Delete this user and all their data? This cannot be undone.')">
               <input type="hidden" name="csrf_token" value="<?= Auth::csrfToken() ?>">
               <input type="hidden" name="user_id" value="<?= $user['id'] ?>">

@@ -13,7 +13,7 @@ define('DB_PASS', '');
 define('DB_CHARSET', 'utf8mb4');
 
 // Session
-define('SESSION_LIFETIME', 86400); // 24 hours
+define('SESSION_LIFETIME', 3600); // 1 hour
 define('SESSION_NAME', 'jt_session');
 
 // File uploads

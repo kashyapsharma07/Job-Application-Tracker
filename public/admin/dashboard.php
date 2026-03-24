@@ -80,13 +80,13 @@ ob_start();
         <span>Quick Actions</span>
       </div>
       <div class="card-body" style="display:flex; gap:10px; flex-wrap:wrap">
-        <a href="/admin/users.php" class="btn btn-primary">
+        <a href="<?= APP_URL ?>/admin/users.php" class="btn btn-primary">
           <i class="bi bi-people"></i> Manage Users
         </a>
-        <a href="/admin/login-logs.php" class="btn btn-secondary">
+        <a href="<?= APP_URL ?>/admin/login-logs.php" class="btn btn-secondary">
           <i class="bi bi-clock-history"></i> View Login Logs
         </a>
-        <a href="/applications.php" class="btn btn-outline-secondary">
+        <a href="<?= APP_URL ?>/applications.php" class="btn btn-outline-secondary">
           <i class="bi bi-folder2-open"></i> View All Applications
         </a>
       </div>
@@ -127,7 +127,7 @@ ob_start();
                 <?= date('M d, Y', strtotime($user['created_at'])) ?>
               </td>
               <td style="padding:12px 16px">
-                <a href="/admin/user-detail.php?id=<?= $user['id'] ?>" class="btn btn-sm btn-outline-secondary" style="font-size:12px">View</a>
+                <a href="<?= APP_URL ?>/admin/user-detail.php?id=<?= base64_encode($user['id']) ?>" class="btn btn-sm btn-outline-secondary" style="font-size:12px">View</a>
               </td>
             </tr>
             <?php endforeach; ?>
