@@ -3,7 +3,6 @@ require_once __DIR__ . '/../src/bootstrap.php';
 
 use PragmaRX\Google2FA\Google2FA;
 
-// Check if user is pending 2FA verification (coming from login.php)
 $userId = $_SESSION['pending_2fa_user_id'] ?? null;
 if (!$userId) {
     redirect('/login.php');
@@ -18,85 +17,85 @@ if (!$user || !$user['twofa_enabled']) {
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $code = trim($_POST['code'] ?? '');
-    
+
     if (empty($code) || strlen($code) !== 6 || !ctype_digit($code)) {
         $error = 'Please enter a valid 6-digit code.';
     } else {
-        // Verify 2FA code
         /** @var \PragmaRX\Google2FA\Google2FA $google2fa */
         $google2fa = new Google2FA();
         if ($google2fa->verifyKey($user['twofa_secret'], $code, 2)) {
-            // Code is valid - complete login
             Auth::login($user);
-            
-            // Clear temp session
-            unset($_SESSION['pending_2fa_user_id']);
-            unset($_SESSION['pending_2fa_email']);
-            
+            unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_email']);
             redirect('/dashboard.php');
         } else {
             $error = 'Invalid 2FA code. Please try again.';
         }
     }
 }
-
-$pageTitle = 'Verify 2FA Code';
-$currentPage = 'login';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?= h($pageTitle) ?> — JobTracker</title>
+  <title>Verify 2FA — JobTracker</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="<?= APP_URL ?>/css/app.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="./css/app.css" rel="stylesheet">
 </head>
-<body class="auth-page">
+<body class="twofa-page">
 
-<div class="auth-card" style="max-width:400px">
-  <div class="auth-logo">
-    <div class="brand-icon"><i class="bi bi-lock-fill"></i></div>
-    <span class="brand-name">JobTracker</span>
-  </div>
+  <div class="twofa-wrap">
 
-  <h2 class="text-center mb-1" style="font-family:'Sora',sans-serif;font-size:22px">Verify Your Identity</h2>
-  <p class="text-center text-muted mb-4" style="font-size:13px">Enter the 6-digit code from your authenticator app</p>
+    <a href="<?= APP_URL ?>/login.php" class="twofa-logo">
+      <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+      <span class="brand-name">JobTracker</span>
+    </a>
 
-  <?php if ($error): ?>
-  <div class="alert alert-danger alert-dismissible fade show" role="alert">
-    <?= h($error) ?>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-  <?php endif; ?>
+    <div class="twofa-card">
 
-  <form method="POST" style="margin-top:25px">
-    <div class="form-group mb-3">
-      <label style="font-size:12px;font-weight:600;color:#9ca3af;margin-bottom:8px;display:block">2FA Code</label>
-      <input type="text" 
-             name="code" 
-             class="form-control" 
-             maxlength="6" 
-             placeholder="000000"
-             inputmode="numeric"
-             pattern="[0-9]{6}"
-             style="font-size:24px;letter-spacing:8px;text-align:center;font-weight:600;padding:16px"
-             required 
-             autofocus>
+      <div class="twofa-icon-block">
+        <i class="bi bi-shield-lock-fill"></i>
+      </div>
+
+      <h1>Two-Factor Verification</h1>
+      <p class="twofa-subtitle">Open your authenticator app and enter the 6-digit code to continue.</p>
+
+      <?php if ($error): ?>
+      <div class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 mb-4">
+        <i class="bi bi-exclamation-circle-fill flex-shrink-0"></i>
+        <?= h($error) ?>
+      </div>
+      <?php endif; ?>
+
+      <form method="POST">
+        <label class="twofa-code-label">Authentication Code</label>
+        <input
+          type="text"
+          name="code"
+          class="twofa-code-input"
+          maxlength="6"
+          placeholder="······"
+          inputmode="numeric"
+          autocomplete="one-time-code"
+          required
+          autofocus>
+
+        <button type="submit" class="twofa-btn">
+          <i class="bi bi-shield-check"></i> Verify & Sign In
+        </button>
+      </form>
+
+      <div class="twofa-footer">
+        Lost access to your authenticator?
+        <a href="<?= APP_URL ?>/settings.php">Manage 2FA in Settings</a>
+      </div>
+
     </div>
+  </div>
 
-    <button type="submit" class="btn btn-primary w-100 mb-3">
-      <i class="bi bi-shield-check"></i> Verify Code
-    </button>
-  </form>
-
-  <p class="text-center" style="font-size:12px;color:#9ca3af;margin-top:20px">
-    Don't have access to your authenticator?<br>
-    <a href="/settings.php" style="color:#1a73e8;text-decoration:none">Disable 2FA in Settings</a>
-  </p>
-</div>
-
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
