@@ -4,19 +4,47 @@ Auth::require();
 Auth::requireAdmin();
 
 // Note: This requires a login_logs table. See migration below.
+
 $db = Database::getInstance();
 
-// Try to get login logs if table exists
-$logs = [];
+// Pagination settings
+$perPage = 10; // logs per page
+$pagesPerGroup = 10; // how many page numbers to show at once
+$page = isset($_GET['page']) && is_numeric($_GET['page']) && $_GET['page'] > 0 ? (int)$_GET['page'] : 1;
+
+// Get total log count
+$totalLogs = 0;
 try {
+  $stmt = $db->query('SELECT COUNT(*) FROM login_logs');
+  $totalLogs = (int)$stmt->fetchColumn();
+} catch (Exception $e) {
+  // Table doesn't exist yet
+}
+
+$totalPages = $totalLogs > 0 ? (int)ceil($totalLogs / $perPage) : 1;
+$page = min($page, $totalPages);
+$offset = ($page - 1) * $perPage;
+
+// Calculate current page group (set of 10 pages)
+$currentGroup = (int)floor(($page - 1) / $pagesPerGroup);
+$groupStart = $currentGroup * $pagesPerGroup + 1;
+$groupEnd = min($groupStart + $pagesPerGroup - 1, $totalPages);
+
+// Fetch logs for current page
+$logs = [];
+if ($totalLogs > 0) {
+  try {
     $stmt = $db->prepare(
-        'SELECT id, user_id, ip_address, login_time, status FROM login_logs 
-         ORDER BY login_time DESC LIMIT 100'
+      'SELECT id, user_id, ip_address, login_time, status FROM login_logs 
+       ORDER BY login_time DESC LIMIT :limit OFFSET :offset'
     );
+    $stmt->bindValue(':limit', $perPage, PDO::PARAM_INT);
+    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     $logs = $stmt->fetchAll();
-} catch (Exception $e) {
+  } catch (Exception $e) {
     // Table doesn't exist yet
+  }
 }
 
 $pageTitle   = 'Login Activity';
@@ -86,6 +114,32 @@ Database::getInstance()->prepare(
         <?php endforeach; ?>
       </tbody>
     </table>
+
+    <!-- Pagination Controls -->
+    <div style="padding:20px 0 0 0; text-align:center">
+      <?php if ($totalPages > 1): ?>
+        <nav aria-label="Login log pagination">
+          <ul class="pagination" style="display:inline-flex; gap:2px; list-style:none; padding:0; margin:0">
+            <!-- Prev group arrow -->
+            <li>
+              <a href="?page=<?= max(1, $groupStart - $pagesPerGroup) ?>" class="page-link" style="padding:6px 12px;<?= $groupStart == 1 ? 'pointer-events:none;opacity:0.5;' : '' ?>">&laquo;</a>
+            </li>
+            <?php for ($i = $groupStart; $i <= $groupEnd; $i++): ?>
+              <li>
+                <a href="?page=<?= $i ?>" class="page-link<?= $i == $page ? ' active' : '' ?>" style="padding:6px 12px;<?= $i == $page ? 'background:#2563eb;color:#fff;border-radius:3px;' : '' ?>">
+                  <?= $i ?>
+                </a>
+              </li>
+            <?php endfor; ?>
+            <!-- Next group arrow -->
+            <li>
+              <a href="?page=<?= min($totalPages, $groupEnd + 1) ?>" class="page-link" style="padding:6px 12px;<?= $groupEnd == $totalPages ? 'pointer-events:none;opacity:0.5;' : '' ?>">&raquo;</a>
+            </li>
+          </ul>
+        </nav>
+      <?php endif; ?>
+    </div>
+
   </div>
 </div>
 

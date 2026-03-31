@@ -2,7 +2,7 @@
 // config/config.php
 
 define('APP_NAME', 'JobTracker');
-define('APP_URL', 'http://localhost/jobtracker');
+define('APP_URL', 'https://unarousable-nontraceable-kira.ngrok-free.dev/jobtracker');
 define('APP_VERSION', '1.0.0');
 
 // Database

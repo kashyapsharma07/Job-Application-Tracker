@@ -1,0 +1,236 @@
+%-------------------------
+% Professional Resume - Kashyap Sharma
+% LaTeX Template for Graduate School Applications
+%-------------------------
+
+\documentclass[letterpaper,11pt]{article}
+
+\usepackage{latexsym}
+\usepackage[empty]{fullpage}
+\usepackage{titlesec}
+\usepackage{marvosym}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{verbatim}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{fancyhdr}
+\usepackage[english]{babel}
+\usepackage{tabularx}
+\usepackage{fontawesome5}
+\usepackage[charter]{mathdesign}
+\input{glyphtounicode}
+
+% Font options
+\pagestyle{fancy}
+\fancyhf{}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% Adjust margins
+\addtolength{\oddsidemargin}{-0.5in}
+\addtolength{\evensidemargin}{-0.5in}
+\addtolength{\textwidth}{1in}
+\addtolength{\topmargin}{-.5in}
+\addtolength{\textheight}{1.0in}
+
+\urlstyle{same}
+
+\raggedbottom
+\raggedright
+\setlength{\tabcolsep}{0in}
+
+% Sections formatting
+\titleformat{\section}{
+  \vspace{-4pt}\scshape\raggedright\large
+}{}{0em}{}[\color{black}\titlerule \vspace{-5pt}]
+
+% Ensure PDF is machine readable
+\pdfgentounicode=1
+
+%-------------------------
+% Custom commands
+\newcommand{\resumeItem}[1]{
+  \item\small{
+    {#1 \vspace{-2pt}}
+  }
+}
+
+\newcommand{\resumeSubheading}[4]{
+  \vspace{-2pt}\item
+    \begin{tabular*}{0.97\textwidth}[t]{l@{\extracolsep{\fill}}r}
+      \textbf{#1} & #2 \\
+      \textit{\small#3} & \textit{\small #4} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubSubheading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \textit{\small#1} & \textit{\small #2} \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeProjectHeading}[2]{
+    \item
+    \begin{tabular*}{0.97\textwidth}{l@{\extracolsep{\fill}}r}
+      \small#1 & #2 \\
+    \end{tabular*}\vspace{-7pt}
+}
+
+\newcommand{\resumeSubItem}[1]{\resumeItem{#1}\vspace{-4pt}}
+
+\renewcommand\labelitemii{$\vcenter{\hbox{\tiny$\bullet$}}$}
+
+\newcommand{\resumeSubHeadingListStart}{\begin{itemize}[leftmargin=0.15in, label={}]}
+\newcommand{\resumeSubHeadingListEnd}{\end{itemize}}
+\newcommand{\resumeItemListStart}{\begin{itemize}}
+\newcommand{\resumeItemListEnd}{\end{itemize}\vspace{-5pt}}
+
+%-------------------------------------------
+%%%%%%  RESUME STARTS HERE  %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+%----------HEADING----------
+\begin{center}
+    \textbf{\Huge \scshape Kashyap Sharma} \\ \vspace{1pt}
+    \small \faPhone\ +91-7621863571 $|$ 
+    \href{mailto:kashyaps1304@gmail.com}{\faEnvelope\ kashyaps1304@gmail.com} $|$ 
+    \href{https://linkedin.com/in/kashyapsharma01}{\faLinkedin\ linkedin.com/in/kashyapsharma01} $|$
+    \href{https://github.com/kashyapsharma07}{\faGithub\ github.com/kashyapsharma07}
+\end{center}
+
+%-----------EDUCATION-----------
+\section{Education}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Gujarat Technological University}{Surat, Gujarat, India}
+      {Bachelor of Engineering in Computer Engineering $|$ \textbf{CGPA: 8.17/10.0}}{Sept. 2022 -- May 2026}
+      \resumeItemListStart
+        \resumeItem{\textbf{Institution:} C. K. Pithawala College of Engineering and Technology}
+        \resumeItem{\textbf{Relevant Coursework:} Data Structures \& Algorithms, Machine Learning, Computer Architecture, Web Development, Database Management Systems, Statistics \& Probability, Python Programming}
+      \resumeItemListEnd
+  \resumeSubHeadingListEnd
+
+%-----------EXPERIENCE-----------
+\section{Experience \& Training}
+  \resumeSubHeadingListStart
+
+    \resumeSubheading
+      {PHP Developer Internship}{Jan. 2026 -- Present}
+      {Jemistry Info Solutions LLP}{Remote}
+      \resumeItemListStart
+        \resumeItem{Developed full-stack web applications using \textbf{PHP 8, MySQL with PDO}, and AJAX, implementing complete \textbf{CRUD operations} with role-based access control (RBAC) for Superadmin, Admin, and User roles}
+        \resumeItem{Designed and deployed \textbf{JWT-based authentication and authorization system} for secure session management, replacing traditional session handling with token-based security}
+        \resumeItem{Built \textbf{RESTful APIs} with complete CRUD functionality, integrated \textbf{2FA (Two-Factor Authentication)}, and implemented \textbf{forgot/reset password} using PHPMailer SMTP integration}
+        \resumeItem{Enhanced web security by implementing \textbf{.htaccess rules}, WHOIS domain lookup via cURL integration, and collaborating with security team to identify and resolve \textbf{10+ security vulnerabilities}}
+        \resumeItem{Automated database and project backup processes using \textbf{Cron jobs} with Google Drive integration, and implemented asynchronous AJAX operations for real-time user interactions on live and personal projects}
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {AI for Manufacturing Certificate Course}{April 2025 -- July 2025}
+      {Intel Corporation \& Gujarat Technological University (NITI Aayog Initiative)}{Online}
+      \resumeItemListStart
+        \resumeItem{Completed intensive 16-week AI training program focused on manufacturing industry applications, covering AI integration for industrial automation and process optimization}
+        \resumeItem{Developed and deployed a real-time \textbf{AI-powered CCTV surveillance system} using YOLOv8 for safety compliance monitoring (helmet, vest, person detection) with Streamlit dashboard integration}
+        \resumeItem{Participated in 50+ hours of live training sessions, collaborative peer learning, and hands-on project implementation with industry mentors from Intel India}
+        \resumeItem{Gained expertise in computer vision pipelines, object detection frameworks, and deploying AI models for edge and cloud manufacturing environments}
+      \resumeItemListEnd
+
+    \resumeSubheading
+      {Responsive Web Design Certification}{Aug. 2024 -- Nov. 2024}
+      {freeCodeCamp}{Online}
+      \resumeItemListStart
+        \resumeItem{Completed 300+ hours of coursework covering modern HTML5, CSS3, responsive design principles, and accessibility standards (WCAG)}
+        \resumeItem{Built 5+ hands-on projects including responsive portfolio website, product landing page, technical documentation page, and survey form with mobile-first design approach}
+        \resumeItem{Implemented Flexbox, CSS Grid, media queries, and cross-browser compatibility techniques for scalable web layouts}
+      \resumeItemListEnd
+
+  \resumeSubHeadingListEnd
+
+%-----------PROJECTS-----------
+\section{Projects}
+    \resumeSubHeadingListStart
+    
+      \resumeProjectHeading
+          {\textbf{Job Application Tracker} $|$ \emph{PHP, MySQL, JavaScript, Bootstrap, 2FA, Cron Jobs}}{Jan. 2026 -- Present}
+          \resumeItemListStart
+            \resumeItem{Built comprehensive full-stack web application for tracking job applications across multiple companies with role-based access control (Superadmin, Admin, User permissions)}
+            \resumeItem{Implemented \textbf{JWT authentication}, \textbf{2FA verification system}, and secure password reset functionality using PHPMailer SMTP integration}
+            \resumeItem{Designed relational MySQL database schema supporting application tracking, resume management, reminder scheduling, and analytics with optimized query performance}
+            \resumeItem{Developed \textbf{automated analytics dashboard} providing real-time insights: application status visualization, success rate metrics, company-wise analysis, and timeline trends for better job search strategy}
+            \resumeItem{Automated \textbf{Cron job backup system} with Google Drive integration, real-time email reminders for pending applications, and asynchronous AJAX operations with comprehensive admin dashboard}
+          \resumeItemListEnd
+    
+      \resumeProjectHeading
+          {\textbf{AI-Powered CCTV Surveillance for Industrial Safety} $|$ \emph{Python, YOLOv8, OpenCV, Streamlit}}{April 2025 -- July 2025}
+          \resumeItemListStart
+            \resumeItem{Engineered an end-to-end computer vision system to monitor industrial processes in real-time using CCTV footage for safety compliance enforcement}
+            \resumeItem{Implemented YOLOv8 object detection model achieving \textbf{92\% mAP} for detecting helmets, safety vests, and personnel in hazardous zones}
+            \resumeItem{Designed interactive Streamlit dashboard for live video stream processing, alert generation, and compliance analytics with frame-by-frame annotation}
+            \resumeItem{Reduced manual safety audits by \textbf{70\%} through automated violation detection and real-time notification system for plant supervisors}
+          \resumeItemListEnd
+          
+      \resumeProjectHeading
+          {\textbf{Intelligent Chatbot for Academic Queries} $|$ \emph{Python, NLP, spaCy, Flask}}{Jan. 2024 -- Mar. 2024}
+          \resumeItemListStart
+            \resumeItem{Developed NLP-based chatbot to automate student query resolution for C.K. Pithawala College, reducing administrative workload by \textbf{60\%}}
+            \resumeItem{Trained intent classification model on 500+ labeled query-response pairs covering admissions, exams, facilities, and academic policies}
+            \resumeItem{Implemented context-aware response generation using TF-IDF vectorization and cosine similarity matching with \textbf{85\% query accuracy}}
+            \resumeItem{Deployed Flask web interface with session management, achieving \textbf{200+ daily interactions} and avg response time under 2 seconds}
+          \resumeItemListEnd
+
+      \resumeProjectHeading
+          {\textbf{Online Library Management System} $|$ \emph{PHP, MySQL, HTML/CSS, JavaScript}}{Sept. 2023 -- Nov. 2023}
+          \resumeItemListStart
+            \resumeItem{Built full-stack CRUD web application for library operations including book cataloging, student registration, and issue/return tracking}
+            \resumeItem{Designed normalized MySQL database schema with 6 tables supporting 1000+ book records and managing concurrent transactions}
+            \resumeItem{Implemented role-based access control (RBAC) for admin and student roles with secure authentication using password hashing (bcrypt)}
+            \resumeItem{Optimized query performance with indexing, reducing book search time by \textbf{40\%} and enabling seamless multi-user operations}
+          \resumeItemListEnd
+
+      \resumeProjectHeading
+          {\textbf{Real-Time Weather Forecasting Web App} $|$ \emph{JavaScript, OpenWeather API, HTML/CSS}}{June 2023 -- July 2023}
+          \resumeItemListStart
+            \resumeItem{Created responsive web application providing real-time weather updates for 200,000+ cities using OpenWeather RESTful API}
+            \resumeItem{Implemented dynamic city search with autocomplete, geolocation support, and 5-day forecast visualization using Chart.js}
+            \resumeItem{Optimized API call efficiency with debouncing and local caching, reducing redundant requests by \textbf{50\%} and improving UX responsiveness}
+          \resumeItemListEnd
+
+    \resumeSubHeadingListEnd
+
+%-----------TECHNICAL SKILLS-----------
+\section{Technical Skills}
+ \begin{itemize}[leftmargin=0.15in, label={}]
+    \small{\item{
+     \textbf{Programming Languages:} Python, Java, JavaScript, PHP, C/C++, SQL, HTML/CSS \\
+     \textbf{Frameworks \& Libraries:} Flask, Laravel, NumPy, Pandas, Matplotlib, Scikit-learn, OpenCV, YOLOv8, spaCy, Bootstrap \\
+     \textbf{Databases:} MySQL, SQLite (familiar with NoSQL concepts) \\
+     \textbf{AI/ML \& Computer Vision:} Machine Learning (supervised/unsupervised), Natural Language Processing, Object Detection, Image Processing, Model Evaluation \& Tuning \\
+     \textbf{Web Technologies:} RESTful APIs, AJAX, JSON, Responsive Design, Cross-Browser Compatibility, MVC Architecture \\
+     \textbf{Developer Tools:} Git/GitHub, VS Code, Jupyter Notebook, Streamlit, Postman, NetBeans, Linux/Unix CLI \\
+     \textbf{IoT \& Hardware:} Arduino, Bluetooth Module Integration, Sensor Data Processing \\
+     \textbf{Soft Skills:} Problem-Solving, Teamwork, Technical Documentation, Project Management, Agile Methodologies, Code Review
+    }}
+ \end{itemize}
+
+%-----------CERTIFICATIONS-----------
+\section{Certifications}
+  \resumeSubHeadingListStart
+    \resumeSubheading
+      {Intel AI for Manufacturing Certificate Course}{Issued: July 15, 2025}
+      {Intel Corporation \& NITI Aayog}{}
+    \resumeSubheading
+      {Responsive Web Design Certification}{Issued: Nov. 01, 2024}
+      {freeCodeCamp (300+ hours)}{}
+    \resumeSubheading
+      {Python with Data Science}{Issued: Sept. 27, 2024}
+      {Infosys Springboard}{}
+    \resumeSubheading
+      {Basics of Python}{Issued: July 27, 2024}
+      {Infosys Springboard}{}
+  \resumeSubHeadingListEnd
+
+%-------------------------------------------
+\end{document}
