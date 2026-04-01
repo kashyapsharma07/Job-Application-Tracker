@@ -75,12 +75,19 @@ $csrf = Auth::csrfToken();
       <input type="email" name="email" class="form-control" required
              value="<?= h($_POST['email'] ?? '') ?>" placeholder="you@example.com">
     </div>
-    <div class="mb-4">
+    <div class="mb-3">
       <label class="form-label">Password</label>
       <input type="password" name="password" class="form-control" required placeholder="••••••••">
     </div>
+    <div class="mb-4 text-end">
+      <a href="<?= APP_URL ?>/forgot-password.php" class="text-decoration-none" style="font-size:13px">Forgot password?</a>
+    </div>
     <button type="submit" class="btn btn-primary w-100">Sign In</button>
   </form>
+
+  <p class="text-center mt-3 mb-0" style="font-size:13px">
+    <a href="<?= APP_URL ?>/forgot-password.php" class="text-decoration-none text-muted">Forgot password?</a>
+  </p>
 
   <p class="text-center mt-4 mb-0" style="font-size:13px">
     Don't have an account? <a href="<?= APP_URL ?>/register.php" class="text-decoration-none fw-600">Sign up</a>

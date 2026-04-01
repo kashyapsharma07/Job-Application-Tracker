@@ -7,7 +7,8 @@ class Auth
     public static function start(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
-            session_name(SESSION_NAME);
+            // Always use a single session name throughout the website
+            session_name('jt_session'); // Use a constant name for all pages
             session_set_cookie_params([
                 'lifetime' => SESSION_LIFETIME,
                 'path'     => '/',

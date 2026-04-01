@@ -10,6 +10,12 @@ CREATE TABLE users (
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
+    password_reset_token VARCHAR(255) DEFAULT NULL,
+    password_reset_expires DATETIME DEFAULT NULL,
+    twofa_enabled TINYINT(1) DEFAULT 0,
+    twofa_secret VARCHAR(255) DEFAULT NULL,
+    twofa_setup_required TINYINT(1) DEFAULT 0,
+    role ENUM('user','admin') DEFAULT 'user',
     job_title VARCHAR(100),
     avatar VARCHAR(255),
     plan ENUM('free','premium') DEFAULT 'free',
@@ -92,9 +98,25 @@ CREATE TABLE password_resets (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
+-- Login activity logs
+CREATE TABLE login_logs (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    user_id INT UNSIGNED NOT NULL,
+    ip_address VARCHAR(45),
+    login_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status ENUM('success', 'failed', 'suspicious') DEFAULT 'success',
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    INDEX idx_user_login (user_id, login_time)
+);
+
 -- Indexes for performance
 CREATE INDEX idx_applications_user ON applications(user_id);
 CREATE INDEX idx_applications_status ON applications(status);
 CREATE INDEX idx_reminders_remind_at ON reminders(remind_at, sent);
 CREATE INDEX idx_events_application ON application_events(application_id);
 CREATE INDEX idx_events_date ON application_events(event_date);
+
+-- Migration: Add password reset columns to existing users table (if not already present)
+-- Run this if you already have a jobtracker database created:
+-- ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(255) DEFAULT NULL;
+-- ALTER TABLE users ADD COLUMN password_reset_expires DATETIME DEFAULT NULL;
