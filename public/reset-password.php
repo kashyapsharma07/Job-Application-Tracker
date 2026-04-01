@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../src/bootstrap.php';
 
+// HTTPS Enforcement for sensitive auth pages
+if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
+    redirect('/login.php');
+}
+
 $token = $_GET['token'] ?? '';
 $email = $_GET['email'] ?? '';
 $error = '';
@@ -28,8 +33,10 @@ if ($token && $email) {
                     $password = $_POST['password'] ?? '';
                     $confirm  = $_POST['confirm'] ?? '';
                 
-                    if (strlen($password) < 8) {
-                        $error = 'Password must be at least 8 characters.';
+                    // Validate password strength
+                    $passwordErrors = validatePassword($password);
+                    if (!empty($passwordErrors)) {
+                        $error = implode('<br>', $passwordErrors);
                     } elseif ($password !== $confirm) {
                         $error = 'Passwords do not match.';
                     } else {

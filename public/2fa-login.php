@@ -24,6 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /** @var \PragmaRX\Google2FA\Google2FA $google2fa */
         $google2fa = new Google2FA();
         if ($google2fa->verifyKey($user['twofa_secret'], $code, 2)) {
+            // Mark that 2FA has been verified
+            $_SESSION['2fa_verified'] = true;
+            
             Auth::login($user);
             unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_email']);
             redirect('/dashboard.php');

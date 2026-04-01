@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../src/bootstrap.php';
 
+// HTTPS Enforcement for sensitive auth pages
+if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
+    redirect('/login.php');
+}
+
 $success = false;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email = trim($_POST['email'] ?? '');
@@ -8,21 +13,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $userModel = new User();
                 $user = $userModel->findByEmail($email);
                 if ($user) {
-                        // Generate secure token
-                        $token = bin2hex(random_bytes(32));
-                        $expires = date('Y-m-d H:i:s', time() + 3600); // 1 hour expiry
-                        $tokenHash = hash('sha256', $token);
+                        // Rate limiting: Check password reset attempts in last 15 minutes
+                        $clientIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+                        $fifteenMinutesAgo = date('Y-m-d H:i:s', time() - 900); // 15 minutes
+                        
+                        $stmt = Database::getInstance()->prepare(
+                            'SELECT COUNT(*) as count FROM login_logs 
+                             WHERE user_id = ? AND ip_address = ? AND login_time > ? AND status = ?'
+                        );
+                        $stmt->execute([$user['id'], $clientIp, $fifteenMinutesAgo, 'password_reset']);
+                        $resetAttempts = $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+                        
+                        // Allow up to 3 attempts per 15 minutes
+                        if ($resetAttempts >= 3) {
+                            // Still show success for privacy, but don't send email
+                            $success = true;
+                        } else {
+                            // Generate secure token
+                            $token = bin2hex(random_bytes(32));
+                            $expires = date('Y-m-d H:i:s', time() + 3600); // 1 hour expiry
+                            $tokenHash = hash('sha256', $token);
 
-                        // Store hash and expiry in DB
-                        Database::getInstance()->prepare(
-                                'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE id = ?'
-                        )->execute([$tokenHash, $expires, $user['id']]);
+                            // Store hash and expiry in DB
+                            Database::getInstance()->prepare(
+                                    'UPDATE users SET password_reset_token = ?, password_reset_expires = ? WHERE id = ?'
+                            )->execute([$tokenHash, $expires, $user['id']]);
 
-                        // Send email
-                        $resetLink = APP_URL . '/reset-password.php?token=' . urlencode($token) . '&email=' . urlencode($email);
-                        $emailBody = <<<HTML
-                        <!DOCTYPE html>
-                        <html>
+                            // Log password reset attempt
+                            Database::getInstance()->prepare(
+                                'INSERT INTO login_logs (user_id, ip_address, status) VALUES (?, ?, ?)'
+                            )->execute([$user['id'], $clientIp, 'password_reset']);
+
+                            // Send email
+                            $resetLink = APP_URL . '/reset-password.php?token=' . urlencode($token) . '&email=' . urlencode($email);
+                            $emailBody = <<<HTML
+                            <!DOCTYPE html>
+                            <html>
                         <head><meta charset="UTF-8"><style>
                             body{font-family:Arial,sans-serif;background:#f4f4f4;margin:0;padding:20px}
                             .card{background:#fff;border-radius:8px;padding:30px;max-width:500px;margin:0 auto;box-shadow:0 2px 8px rgba(0,0,0,.08)}
@@ -44,10 +70,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         </body></html>
                         HTML;
-                        Mailer::send($email, $user['name'], 'Password Reset Request', $emailBody);
+                            Mailer::send($email, $user['name'], 'Password Reset Request', $emailBody);
+                            $success = true;
+                        }
                 }
-                // Always show success message for privacy
-                $success = true;
         }
 }
 $csrf = Auth::csrfToken();

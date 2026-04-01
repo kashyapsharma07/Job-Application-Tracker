@@ -99,6 +99,12 @@ class Application {
     }
 
     public function updateStatus(int $id, int $userId, string $status): bool {
+        // Validate status against whitelist
+        $validStatuses = ['wishlist', 'applied', 'interviewing', 'offer', 'rejected'];
+        if (!in_array($status, $validStatuses, true)) {
+            error_log('Invalid status attempted: ' . $status);
+            return false;
+        }
         $old = $this->getById($id, $userId);
         $stmt = $this->db->prepare('UPDATE applications SET status = ? WHERE id = ? AND user_id = ?');
         $ok = $stmt->execute([$status, $id, $userId]);

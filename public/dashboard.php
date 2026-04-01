@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../src/bootstrap.php';
 Auth::require();
+Auth::require2faIfEnabled(); // Enforce 2FA if user has it enabled
 
 $appModel = new Application();
 $userId   = Auth::id();
@@ -68,7 +69,7 @@ ob_start();
             </div>
             <div class="kanban-cards">
               <?php foreach (array_slice($apps, 0, 3) as $app): ?>
-              <div class="app-card" onclick="window.location='<?= APP_URL ?>/application-detail.php?id=<?= $app['id'] ?>'">
+              <div class="app-card" onclick="window.location=window.APP_URL + '/application-detail.php?id=<?= $app['id'] ?>'" style="cursor:pointer">
                 <div class="company-logo"><?= strtoupper(substr($app['company'],0,1)) ?></div>
                 <div class="job-title"><?= h($app['job_title']) ?></div>
                 <div class="company-name"><?= h($app['company']) ?></div>

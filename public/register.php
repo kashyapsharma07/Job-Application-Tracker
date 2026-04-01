@@ -60,7 +60,7 @@ $csrf = Auth::csrfToken();
   <p class="text-center text-muted mb-4" style="font-size:14px">Start tracking your job search today</p>
 
   <?php if ($error): ?>
-  <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:13px"><?= $error ?></div>
+  <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:13px"><?php echo $error; ?></div>
   <?php endif; ?>
 
   <?php if ($success): ?>

@@ -91,7 +91,7 @@ ob_start();
         <span class="badge bg-primary mb-2">Default</span>
         <?php endif; ?>
         <div class="d-flex gap-3 align-items-start">
-          <div style="font-size:36px;color:#dc2626"><i class="bi bi-file-earmark-pdf"></i></div>
+          <div style="font-size:36px;color:#dc2626;line-height:1;min-width:36px"><i class="bi bi-file-earmark-pdf"></i></div>
           <div class="flex-grow-1">
             <div style="font-weight:600;font-size:14px;word-break:break-all"><?= h($r['original_name']) ?></div>
             <?php if ($r['version_label']): ?>

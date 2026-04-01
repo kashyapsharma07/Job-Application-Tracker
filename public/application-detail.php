@@ -17,15 +17,21 @@ $events = $appModel->getEvents($id);
 // Handle add event POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_event'])) {
     if (Auth::verifyCsrf($_POST['csrf_token'] ?? '')) {
+        $eventType = $_POST['event_type'] ?? '';
+        $validEventTypes = ['phone_call', 'interview', 'email', 'follow_up', 'offer', 'rejection', 'note'];
+        if (!in_array($eventType, $validEventTypes, true)) {
+            flash('error', 'Invalid event type.');
+            redirect(APP_URL . '/application-detail.php?id=' . $id);
+        }
         $appModel->addEvent(
             $id,
-            $_POST['event_type'],
+            $eventType,
             trim($_POST['event_title'] ?? ''),
             trim($_POST['event_desc'] ?? ''),
             !empty($_POST['event_date']) ? $_POST['event_date'] : null
         );
         flash('success', 'Event added.');
-        redirect('/application-detail.php?id=' . $id);
+        redirect(APP_URL . '/application-detail.php?id=' . $id);
     }
 }
 
@@ -35,7 +41,7 @@ $currentPage = 'applications';
 ob_start();
 ?>
 <div class="mb-4">
-  <a href="<?= APP_URL ?>/applications.php" class="text-decoration-none text-muted" style="font-size:13px">
+  <a href="/jobtracker/applications.php" class="text-decoration-none text-muted" style="font-size:13px">
     <i class="bi bi-arrow-left me-1"></i> Back to Applications
   </a>
 </div>
@@ -70,8 +76,8 @@ ob_start();
               <?php endif; ?>
             </div>
           </div>
-          <a href="<?= APP_URL ?>/applications.php" class="btn btn-sm btn-outline-primary"
-             onclick="localStorage.setItem('editApp','<?= $app['id'] ?>');return true;">
+          <a href="#" class="btn btn-sm btn-outline-primary"
+             onclick="localStorage.setItem('editApp','<?= $app['id'] ?>');window.location.href=window.APP_URL+'/applications.php';return false;">
             <i class="bi bi-pencil me-1"></i> Edit
           </a>
         </div>
@@ -166,11 +172,13 @@ ob_start();
           <div class="mb-3">
             <label class="form-label">Event Type</label>
             <select name="event_type" class="form-select" required>
+              <option value="phone_call">Phone Call</option>
               <option value="interview">Interview</option>
+              <option value="email">Email</option>
               <option value="follow_up">Follow-up</option>
-              <option value="deadline">Deadline</option>
-              <option value="note">Note</option>
               <option value="offer">Offer</option>
+              <option value="rejection">Rejection</option>
+              <option value="note">Note</option>
             </select>
           </div>
           <div class="mb-3">
@@ -190,14 +198,12 @@ ob_start();
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Add Event</button>
         </div>
-      </form>
     </div>
-  </div>
-</div>
-
+      <?php
+      $content = ob_get_clean();
+      include __DIR__ . '/../views/partials/header.php';
+      echo $content;
+?>
+<input type="hidden" id="csrfToken" value="<?= Auth::csrfToken() ?>">
 <?php
-$content = ob_get_clean();
-$inlineScript = "const APP_DETAIL_ID={$app['id']};const APP_DETAIL_STATUS='{$app['status']}';";
-include __DIR__ . '/../views/partials/header.php';
-echo $content;
-include __DIR__ . '/../views/partials/footer.php';
+      include __DIR__ . '/../views/partials/footer.php';

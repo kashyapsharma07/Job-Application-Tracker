@@ -12,9 +12,8 @@ $currentPage = 'admin';
 // Handle delete user
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'])) {
     if (Auth::verifyCsrf($_POST['csrf_token'] ?? '')) {
-        $userModel->deleteUser($_POST['user_id']);
-        header('Location: jobtracker/admin/users.php?msg=deleted');
-        exit;
+        $userModel->delete((int)$_POST['user_id']);
+        redirect('/admin/users.php?msg=deleted');
     }
 }
 

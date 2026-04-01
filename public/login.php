@@ -15,6 +15,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (empty($email) || empty($password)) {
             $error = 'Please fill in all fields.';
+        } elseif (Auth::isAccountLocked($email)) {
+            // Account is locked due to too many failed attempts
+            $error = 'Too many failed login attempts. Please try again in 15 minutes.';
         } else {
             $userModel = new User();
             $user = $userModel->findByEmail($email);
@@ -36,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     redirect('/dashboard.php');
                 }
             } else {
+                // Log failed login attempt
+                Auth::logFailedLogin($email);
                 $error = 'Invalid email or password.';
             }
         }

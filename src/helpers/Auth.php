@@ -34,13 +34,15 @@ class Auth
             // Login table might not exist yet - that's okay
         }
         
-        $_SESSION['user_id']   = $user['id'];
-        $_SESSION['user_name'] = $user['name'];
-        $_SESSION['user_email'] = $user['email'];
-        $_SESSION['user_plan'] = $user['plan'];
-        $_SESSION['user_role'] = $user['role'] ?? 'user';
-        $_SESSION['logged_in'] = true;
-        $_SESSION['user_ip']   = self::getClientIp();
+        $_SESSION['user_id']      = $user['id'];
+        $_SESSION['user_name']    = $user['name'];
+        $_SESSION['user_email']   = $user['email'];
+        $_SESSION['user_plan']    = $user['plan'];
+        $_SESSION['user_role']    = $user['role'] ?? 'user';
+        $_SESSION['logged_in']    = true;
+        $_SESSION['user_ip']      = self::getClientIp();
+        $_SESSION['user_agent']   = self::getUserAgent();
+        $_SESSION['login_time']   = time();
     }
 
     public static function logout(): void
@@ -76,16 +78,27 @@ class Auth
     public static function require(): void
     {
         self::start();
+        
+        // Check session timeout
         if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity'] > SESSION_LIFETIME)) {
             self::logout();
-            redirect('/login.php');
+            redirect('/login.php?error=session_expired');
         }
         $_SESSION['last_activity'] = time();
+        
+        // Check if user is logged in
         if (!self::check()) {
             redirect('/login.php');
         }
+        
         // IP address binding - detect session hijacking
         if (isset($_SESSION['user_ip']) && $_SESSION['user_ip'] !== self::getClientIp()) {
+            self::logout();
+            redirect('/login.php?error=security');
+        }
+        
+        // User-Agent binding - detect session hijacking
+        if (isset($_SESSION['user_agent']) && $_SESSION['user_agent'] !== self::getUserAgent()) {
             self::logout();
             redirect('/login.php?error=security');
         }
@@ -122,6 +135,11 @@ class Auth
         }
     }
 
+    private static function getUserAgent(): string
+    {
+        return $_SERVER['HTTP_USER_AGENT'] ?? 'unknown';
+    }
+
 
     // Check if current user is admin
     public static function isAdmin(): bool
@@ -134,10 +152,53 @@ class Auth
     public static function requireAdmin(): void
     {
         self::start();
+        self::require(); // First check authentication
         if (!self::isAdmin()) {
             http_response_code(403);
             echo 'Access Denied. Admin only.';
             exit;
+        }
+    }
+
+    // Check if user account is locked (brute force protection)
+    public static function isAccountLocked(string $email): bool
+    {
+        try {
+            $stmt = Database::getInstance()->prepare(
+                'SELECT COUNT(*) FROM login_logs WHERE email = :email AND status = "failed" AND login_time > DATE_SUB(NOW(), INTERVAL 15 MINUTE)'
+            );
+            $stmt->execute([':email' => $email]);
+            $failedAttempts = (int)$stmt->fetchColumn();
+            return $failedAttempts >= 5; // Lock after 5 failed attempts in 15 minutes
+        } catch (Exception $e) {
+            return false; // If query fails, allow login
+        }
+    }
+
+    // Log failed login attempt
+    public static function logFailedLogin(string $email): void
+    {
+        try {
+            Database::getInstance()->prepare(
+                'INSERT INTO login_logs (email, ip_address, status) VALUES (?, ?, ?)'
+            )->execute([$email, self::getClientIp(), 'failed']);
+        } catch (Exception $e) {
+            // Log table might not exist
+        }
+    }
+
+    // Verify that 2FA is completed before allowing dashboard access
+    public static function require2faIfEnabled(): void
+    {
+        self::start();
+        $userModel = new User();
+        $user = $userModel->findById(self::id());
+        
+        if ($user && !empty($user['twofa_enabled']) && $user['twofa_enabled'] == 1) {
+            // If user has 2FA enabled but hasn't verified it yet
+            if (empty($_SESSION['2fa_verified'])) {
+                redirect('/2fa-login.php');
+            }
         }
     }
 }

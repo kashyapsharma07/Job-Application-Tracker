@@ -336,7 +336,7 @@ ob_start();
               $maxCount = max(1, $topCo[0]['count']);
               $barPct   = round($co['count'] / $maxCount * 100);
             ?>
-            <tr style="cursor:pointer" onclick="window.location='<?= APP_URL ?>/applications.php?search=<?= urlencode($co['company']) ?>'">
+            <tr style="cursor:pointer" onclick="window.location=window.APP_URL+'/applications.php?search=<?= urlencode($co['company']) ?>'">
               <td class="ps-3">
                 <div class="d-flex align-items-center gap-2">
                   <div class="company-logo-cell">

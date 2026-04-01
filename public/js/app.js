@@ -46,7 +46,7 @@ function initApplicationsPage() {
   document.querySelectorAll('.btn-view').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      window.location = APP_URL + '/application-detail.php?id=' + btn.dataset.id;
+        window.location = '/jobtracker/application-detail.php?id=' + btn.dataset.id;
     });
   });
 
@@ -77,8 +77,8 @@ function initApplicationsPage() {
       saveBtn.textContent = 'Save Application';
       if (res.ok) {
         modal.hide();
-        // Redirect to applications page with action=new
-        window.location = '/jobtracker/applications.php?action=new';
+          // Force redirect to correct path for new application
+          window.location = '/jobtracker/applications.php?action=new';
       } else {
         alert(res.error || 'An error occurred.');
       }
@@ -126,7 +126,7 @@ function initApplicationsPage() {
       timer = setTimeout(() => {
         const q = searchInput.value.trim();
         if (q.length > 1) {
-          window.location = APP_URL + '/applications.php?search=' + encodeURIComponent(q);
+            window.location = '/jobtracker/applications.php?search=' + encodeURIComponent(q);
         }
       }, 500);
     });
@@ -194,13 +194,18 @@ async function postAction(data) {
 
 async function postFormData(fd) {
   try {
-    const url = window.APP_URL
-      ? APP_URL + '/applications.php'
-      : window.location.pathname;
+    const url = (typeof window.APP_URL !== 'undefined' ? window.APP_URL : '') + '/applications.php';
     const res = await fetch(url, { method: 'POST', body: fd });
-    return await res.json();
+    const json = await res.json();
+    console.log('Response:', json);
+    if (json.error) {
+      alert('Error: ' + json.error);
+      return json;
+    }
+    return json;
   } catch (e) {
-    console.error(e);
+    console.error('Fetch error:', e);
+    alert('Network error: ' + e.message);
     return { error: 'Network error' };
   }
 }

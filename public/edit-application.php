@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <textarea name="notes" class="form-control"><?= htmlspecialchars($application['notes'] ?? '') ?></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Update</button>
-            <a href="applications.php" class="btn btn-secondary">Back</a>
+            <a href="/jobtracker/applications.php" class="btn btn-secondary">Back</a>
         </form>
     </div>
 </body>

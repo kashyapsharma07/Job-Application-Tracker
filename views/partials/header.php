@@ -96,7 +96,7 @@ $currentPage = $currentPage ?? '';
         <input type="text" id="globalSearch" placeholder="Search applications..." autocomplete="off">
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-primary btn-sm" onclick="window.location='<?= APP_URL ?>/applications.php?action=new'">
+        <button class="btn btn-primary btn-sm" onclick="window.location='/jobtracker/applications.php?action=new'">
           <i class="bi bi-plus-lg"></i> Add New Application
         </button>
         <a href="<?= APP_URL ?>/reminders.php" class="topbar-icon" title="Reminders">

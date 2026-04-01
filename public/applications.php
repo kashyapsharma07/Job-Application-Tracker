@@ -22,6 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
   }
   if ($action === 'update_status') {
     $status = $_POST['status'] ?? '';
+    $validStatuses = ['wishlist', 'applied', 'interviewing', 'offer', 'rejected'];
+    if (!in_array($status, $validStatuses, true)) {
+      json_response(['error' => 'Invalid status'], 422);
+    }
     $appModel->updateStatus($id, $userId, $status);
     json_response(['ok' => true]);
   }
@@ -97,11 +101,11 @@ ob_start();
 
 <!-- Status filter tabs -->
 <div class="d-flex gap-2 mb-4 flex-wrap">
-  <a href="applications.php" class="btn btn-sm <?= empty($filters['status']) ? 'btn-dark' : 'btn-outline-secondary' ?>">
+  <a href="/jobtracker/applications.php" class="btn btn-sm <?= empty($filters['status']) ? 'btn-dark' : 'btn-outline-secondary' ?>">
     All <span class="badge bg-secondary ms-1"><?= array_sum($counts) ?></span>
   </a>
   <?php foreach (['wishlist', 'applied', 'interviewing', 'offer', 'rejected'] as $s): ?>
-    <a href="?status=<?= $s ?>" class="btn btn-sm <?= $filters['status'] === $s ? 'btn-dark' : 'btn-outline-secondary' ?>">
+    <a href="/jobtracker/applications.php?status=<?= $s ?>" class="btn btn-sm <?= $filters['status'] === $s ? 'btn-dark' : 'btn-outline-secondary' ?>">
       <span class="col-dot dot-<?= $s ?> me-1" style="display:inline-block;width:7px;height:7px;border-radius:50%;vertical-align:middle"></span>
       <?= ucfirst($s) ?> <span class="badge bg-secondary ms-1"><?= $counts[$s] ?></span>
     </a>
@@ -133,7 +137,7 @@ ob_start();
                 <i class="bi bi-calendar3"></i>
                 <?= $app['applied_at'] ? date('M d', strtotime($app['applied_at'])) : 'No date' ?>
                 <div class="ms-auto d-flex gap-1">
-                  <a href="edit-application.php?id=<?= base64_encode($app['id']) ?>" class="btn btn-sm p-0 px-1" title="Edit"><i class="bi bi-pencil" style="font-size:12px"></i></a>
+                  <a href="/jobtracker/edit-application.php?id=<?= base64_encode($app['id']) ?>" class="btn btn-sm p-0 px-1" title="Edit"><i class="bi bi-pencil" style="font-size:12px"></i></a>
                   <button class="btn btn-sm p-0 px-1 btn-view" data-id="<?= $app['id'] ?>" title="View"><i class="bi bi-eye" style="font-size:12px"></i></button>
                 </div>
               </div>
@@ -187,7 +191,7 @@ ob_start();
               <td>
                 <div class="d-flex gap-1">
                   <a href="<?= APP_URL ?>/application-detail.php?id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-secondary py-0 px-2"><i class="bi bi-eye"></i></a>
-                  <a href="edit-application.php?id=<?= base64_encode($app['id']) ?>" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Edit"><i class="bi bi-pencil"></i></a>
+                  <a href="/jobtracker/edit-application.php?id=<?= base64_encode($app['id']) ?>" class="btn btn-sm btn-outline-secondary py-0 px-2" title="Edit"><i class="bi bi-pencil"></i></a>
                   <button class="btn btn-sm btn-outline-danger py-0 px-2 btn-delete" data-id="<?= $app['id'] ?>"><i class="bi bi-trash"></i></button>
                 </div>
               </td>
