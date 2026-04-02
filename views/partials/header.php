@@ -10,7 +10,7 @@ $currentPage = $currentPage ?? '';
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><?= h($pageTitle ?? 'JobTracker') ?> — JobTracker</title>
-<link rel="icon" href="<?= APP_URL ?>/img/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="<?= APP_URL ?>/uploads/resumes/job_logo.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
@@ -24,7 +24,9 @@ $currentPage = $currentPage ?? '';
   <!-- Sidebar -->
   <aside class="sidebar">
     <a href="<?= APP_URL ?>/dashboard.php" class="sidebar-brand" style="text-decoration:none">
-      <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+      <div class="brand-icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;overflow:hidden;padding:0;">
+        <img src="<?= APP_URL ?>/uploads/resumes/job_logo.png" alt="Logo" style="width:180%;height:180%;object-fit:cover;display:block;">
+      </div>
       <span class="brand-name">JobTracker</span>
     </a>
 
@@ -71,9 +73,9 @@ $currentPage = $currentPage ?? '';
         <i class="bi bi-gear"></i> <span>Settings</span>
       </a>
       <div class="user-card">
-        <div class="user-avatar">
+        <div class="user-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden">
           <?php if (!empty($currentUser['avatar'])): ?>
-            <img src="<?= APP_URL ?>/uploads/avatars/<?= h($currentUser['avatar']) ?>" alt="Avatar">
+            <img src="<?= APP_URL ?>/uploads/avatars/<?= h($currentUser['avatar']) ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
           <?php else: ?>
             <?= strtoupper(substr($currentUser['name'], 0, 1)) ?>
           <?php endif; ?>
@@ -91,17 +93,19 @@ $currentPage = $currentPage ?? '';
   <main class="main-content">
     <!-- Top bar -->
     <div class="topbar">
-      <div class="topbar-search">
-        <i class="bi bi-search"></i>
-        <input type="text" id="globalSearch" placeholder="Search applications..." autocomplete="off">
-      </div>
-      <div class="topbar-actions">
-        <button class="btn btn-primary btn-sm" onclick="window.location='/jobtracker/applications.php?action=new'">
-          <i class="bi bi-plus-lg"></i> Add New Application
-        </button>
-        <a href="<?= APP_URL ?>/reminders.php" class="topbar-icon" title="Reminders">
-          <i class="bi bi-bell"></i>
-        </a>
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <div class="topbar-search">
+          <i class="bi bi-search"></i>
+          <input type="text" id="globalSearch" placeholder="Search applications..." autocomplete="off">
+        </div>
+        <div class="topbar-actions" style="display:flex;align-items:center;gap:14px;">
+          <button class="btn btn-primary btn-sm" onclick="window.location='/jobtracker/applications.php?action=new'">
+            <i class="bi bi-plus-lg"></i> Add New Application
+          </button>
+          <a href="<?= APP_URL ?>/reminders.php" class="topbar-icon" title="Reminders">
+            <i class="bi bi-bell"></i>
+          </a>
+        </div>
       </div>
     </div>
 

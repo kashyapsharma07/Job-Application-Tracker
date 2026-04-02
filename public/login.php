@@ -63,7 +63,9 @@ $csrf = Auth::csrfToken();
 <body class="auth-page">
 <div class="auth-card">
   <div class="auth-logo">
-    <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+    <div class="brand-icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;overflow:hidden;padding:0;box-shadow:0 2px 12px 0 rgba(30, 64, 175, 0.18);">
+      <img src="<?= APP_URL ?>/uploads/resumes/job_logo.png" alt="Logo" style="width:180%;height:180%;object-fit:cover;display:block;margin-left:-10%;margin-top:-10%;">
+    </div>
     <span class="brand-name">JobTracker</span>
   </div>
   <h2 class="text-center mb-1" style="font-family:'Sora',sans-serif;font-size:22px">Welcome back</h2>

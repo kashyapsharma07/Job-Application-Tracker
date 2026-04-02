@@ -28,20 +28,20 @@ ob_start();
 <div class="stat-grid">
   <div class="stat-card">
     <div class="stat-label">Total Applications</div>
-    <div class="stat-value"><?= $total ?></div>
+    <div class="stat-value"><?= h($total) ?></div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Interviewing</div>
-    <div class="stat-value"><?= $counts['interviewing'] ?></div>
+    <div class="stat-value"><?= h($counts['interviewing']) ?></div>
     <span class="stat-badge text-warning"><i class="bi bi-arrow-up-short"></i></span>
   </div>
   <div class="stat-card">
     <div class="stat-label">Offers Received</div>
-    <div class="stat-value"><?= $counts['offer'] ?></div>
+    <div class="stat-value"><?= h($counts['offer']) ?></div>
   </div>
   <div class="stat-card">
     <div class="stat-label">Success Rate</div>
-    <div class="stat-value"><?= $total > 0 ? round(($counts['offer']/$total)*100) : 0 ?>%</div>
+    <div class="stat-value"><?= $total > 0 ? h(round(($counts['offer']/$total)*100)) : 0 ?>%</div>
   </div>
 </div>
 
@@ -63,19 +63,19 @@ ob_start();
           ?>
           <div class="kanban-col">
             <div class="kanban-col-header">
-              <span class="col-dot dot-<?= $s ?>"></span>
-              <?= strtoupper($s) ?>
-              <span class="col-count"><?= $counts[$s] ?></span>
+              <span class="col-dot dot-<?= h($s) ?>"></span>
+              <?= strtoupper(h($s)) ?>
+              <span class="col-count"><?= h($counts[$s]) ?></span>
             </div>
             <div class="kanban-cards">
               <?php foreach (array_slice($apps, 0, 3) as $app): ?>
               <div class="app-card" onclick="window.location=window.APP_URL + '/application-detail.php?id=<?= $app['id'] ?>'" style="cursor:pointer">
-                <div class="company-logo"><?= strtoupper(substr($app['company'],0,1)) ?></div>
+                <div class="company-logo"><?= strtoupper(h(substr($app['company'],0,1))) ?></div>
                 <div class="job-title"><?= h($app['job_title']) ?></div>
                 <div class="company-name"><?= h($app['company']) ?></div>
                 <div class="card-footer-row">
                   <i class="bi bi-calendar3"></i>
-                  <?= $app['applied_at'] ? date('M d', strtotime($app['applied_at'])) : 'No date' ?>
+                  <?= $app['applied_at'] ? h(date('M d', strtotime($app['applied_at']))) : 'No date' ?>
                 </div>
               </div>
               <?php endforeach; ?>

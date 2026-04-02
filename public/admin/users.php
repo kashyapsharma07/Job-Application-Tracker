@@ -50,16 +50,16 @@ ob_start();
       <tbody>
         <?php foreach ($users as $user): ?>
         <tr>
-          <td style="padding:12px 16px"><code style="font-size:12px; background:#f0f4f9; padding:2px 6px; border-radius:3px">#<?= $user['id'] ?></code></td>
+          <td style="padding:12px 16px"><code style="font-size:12px; background:#f0f4f9; padding:2px 6px; border-radius:3px">#<?= h($user['id']) ?></code></td>
           <td style="padding:12px 16px"><?= h($user['name']) ?></td>
           <td style="padding:12px 16px; font-size:13px; color:#9ca3af"><?= h($user['email']) ?></td>
           <td style="padding:12px 16px">
             <span class="badge <?= $user['role'] === 'admin' ? 'bg-danger' : 'bg-secondary' ?>" style="font-size:11px">
-              <?= ucfirst($user['role']) ?>
+              <?= h(ucfirst($user['role'])) ?>
             </span>
           </td>
           <td style="padding:12px 16px; font-size:13px; color:#9ca3af">
-            <?= date('M d, Y', strtotime($user['created_at'])) ?>
+            <?= h(date('M d, Y', strtotime($user['created_at']))) ?>
           </td>
           <td style="padding:12px 16px">
             <a href="<?= APP_URL ?>/admin/user-detail.php?id=<?= base64_encode($user['id']) ?>" class="btn btn-sm btn-outline-secondary" style="font-size:12px">View</a>

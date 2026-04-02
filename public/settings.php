@@ -18,17 +18,73 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name     = trim($_POST['name'] ?? '');
         $jobTitle = trim($_POST['job_title'] ?? '');
         $email    = trim($_POST['email'] ?? '');
+        $avatar   = $user['avatar'] ?? null;
+        $avatarUpdated = false;
 
+        // Handle avatar upload with detailed error reporting
+        if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
+          $file = $_FILES['avatar'];
+          $allowedTypes = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/gif' => 'gif'];
+          $maxSize = 2 * 1024 * 1024; // 2MB
+          if ($file['error'] !== UPLOAD_ERR_OK) {
+            $err = 'Error uploading file.';
+            if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE) $err = 'File is too large.';
+            elseif ($file['error'] === UPLOAD_ERR_PARTIAL) $err = 'File was only partially uploaded.';
+            elseif ($file['error'] === UPLOAD_ERR_NO_TMP_DIR) $err = 'Missing a temporary folder on server.';
+            elseif ($file['error'] === UPLOAD_ERR_CANT_WRITE) $err = 'Failed to write file to disk.';
+            elseif ($file['error'] === UPLOAD_ERR_EXTENSION) $err = 'A PHP extension stopped the file upload.';
+            flash('error', $err);
+          } elseif (!isset($allowedTypes[$file['type']])) {
+            flash('error', 'Only JPG, PNG, and GIF images are allowed.');
+          } elseif ($file['size'] > $maxSize) {
+            flash('error', 'File size must be under 2MB.');
+          } else {
+            $ext = $allowedTypes[$file['type']];
+            $safeName = 'avatar_' . $userId . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+            $uploadDir = __DIR__ . '/uploads/avatars/';
+            if (!is_dir($uploadDir)) {
+              mkdir($uploadDir, 0755, true);
+            }
+            $target = $uploadDir . $safeName;
+            if (move_uploaded_file($file['tmp_name'], $target)) {
+              // Remove old avatar if exists
+              if (!empty($user['avatar']) && file_exists($uploadDir . $user['avatar'])) {
+                @unlink($uploadDir . $user['avatar']);
+              }
+              $avatar = $safeName;
+              $avatarUpdated = true;
+            } else {
+              flash('error', 'Failed to save uploaded file. Check folder permissions.');
+            }
+          }
+        }
+
+        $hasUploadError = isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE && !$avatarUpdated;
         if (!$name || !$email) {
-            flash('error', 'Name and email are required.');
+          flash('error', 'Name and email are required.');
+        } elseif (!preg_match("/^[a-zA-Z .'-]{2,50}$/u", $name)) {
+          flash('error', 'Name must only contain letters, spaces, hyphens, apostrophes, and dots (2-50 chars).');
+        } elseif (preg_match('/<[^>]+>/', $name)) {
+          flash('error', 'Name cannot contain HTML or script tags.');
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            flash('error', 'Invalid email.');
+          flash('error', 'Invalid email.');
         } elseif ($userModel->emailExists($email, $userId)) {
-            flash('error', 'Email already in use.');
+          flash('error', 'Email already in use.');
+        } elseif ($hasUploadError) {
+          // Do not update avatar if upload failed
+          // Error already flashed above
         } else {
-            $userModel->update($userId, ['name' => $name, 'job_title' => $jobTitle]);
-            $_SESSION['user_name'] = $name;
-            flash('success', 'Profile updated.');
+          $updateData = ['name' => $name, 'job_title' => $jobTitle];
+          if ($avatarUpdated) {
+            $updateData['avatar'] = $avatar;
+          }
+          $userModel->update($userId, $updateData);
+          // Refresh Auth user session so sidebar gets latest avatar
+          $_SESSION['user_name'] = $name;
+          if ($avatarUpdated) {
+            $_SESSION['user_avatar'] = $avatar;
+          }
+          flash('success', 'Profile updated.');
         }
     } elseif ($action === 'notifications') {
         $userModel->update($userId, [
@@ -97,15 +153,19 @@ ob_start();
       <div class="card-header"><span>Profile Information</span></div>
       <div class="card-body">
         <div class="d-flex align-items-center gap-3 mb-4">
-          <div class="user-avatar" style="width:64px;height:64px;font-size:24px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700">
-            <?= strtoupper(substr($user['name'],0,1)) ?>
+          <div class="user-avatar" style="width:64px;height:64px;font-size:24px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden">
+            <?php if (!empty($user['avatar'])): ?>
+              <img src="<?= APP_URL ?>/uploads/avatars/<?= h($user['avatar']) ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
+            <?php else: ?>
+              <?= strtoupper(substr($user['name'],0,1)) ?>
+            <?php endif; ?>
           </div>
           <div>
             <div style="font-weight:600"><?= h($user['name']) ?></div>
             <div style="font-size:13px;color:var(--text-secondary)"><?= h($user['job_title'] ?: 'Job Hunter') ?></div>
           </div>
         </div>
-        <form method="POST">
+        <form method="POST" enctype="multipart/form-data">
           <input type="hidden" name="csrf_token" value="<?= Auth::csrfToken() ?>">
           <input type="hidden" name="action" value="profile">
           <div class="row g-3 mb-3">
@@ -122,6 +182,11 @@ ob_start();
             <label class="form-label">Email Address</label>
             <input type="email" name="email" class="form-control" value="<?= h($user['email']) ?>" readonly style="background:#f8f9fb">
             <div class="form-text">Email cannot be changed.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Profile Photo</label>
+            <input type="file" name="avatar" accept="image/*" class="form-control">
+            <div class="form-text">JPG, PNG, GIF. Max 2MB.</div>
           </div>
           <button type="submit" class="btn btn-primary">Save Changes</button>
         </form>

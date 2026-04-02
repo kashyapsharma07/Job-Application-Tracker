@@ -67,11 +67,12 @@ class Auth
     public static function user(): array
     {
         return [
-            'id'    => $_SESSION['user_id'] ?? null,
-            'name'  => $_SESSION['user_name'] ?? '',
-            'email' => $_SESSION['user_email'] ?? '',
-            'plan'  => $_SESSION['user_plan'] ?? 'free',
-            'role'  => $_SESSION['user_role'] ?? 'user',
+            'id'     => $_SESSION['user_id'] ?? null,
+            'name'   => $_SESSION['user_name'] ?? '',
+            'email'  => $_SESSION['user_email'] ?? '',
+            'plan'   => $_SESSION['user_plan'] ?? 'free',
+            'role'   => $_SESSION['user_role'] ?? 'user',
+            'avatar' => $_SESSION['user_avatar'] ?? null,
         ];
     }
 

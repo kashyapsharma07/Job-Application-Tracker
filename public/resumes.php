@@ -15,30 +15,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
     if ($action === 'upload' && !empty($_FILES['resume_file']['name'])) {
-        $file = $_FILES['resume_file'];
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            flash('error', 'Upload error. Try again.');
-        } elseif ($file['size'] > UPLOAD_MAX_SIZE) {
-            flash('error', 'File too large. Max 10MB.');
-        } elseif (!in_array($file['type'], ALLOWED_MIME_TYPES)) {
-            flash('error', 'Only PDF and DOCX files are allowed.');
+      $file = $_FILES['resume_file'];
+      if ($file['error'] !== UPLOAD_ERR_OK) {
+        flash('error', 'Upload error. Try again.');
+      } elseif ($file['size'] > UPLOAD_MAX_SIZE) {
+        flash('error', 'File too large. Max 10MB.');
+      } elseif (!in_array($file['type'], ALLOWED_MIME_TYPES)) {
+        flash('error', 'Only PDF and DOCX files are allowed.');
+      } else {
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        // Only allow pdf and docx extensions
+        if (!in_array($ext, ['pdf', 'docx'])) {
+          flash('error', 'Invalid file extension. Only PDF and DOCX allowed.');
+        } elseif (preg_match('/\.(php|exe|sh|js|pl|py|rb|jsp|asp|aspx|bat|cmd|com|dll|vbs|wsf|csh|ksh|bash|zsh|fish|cgi)$/i', $file['name'])) {
+          flash('error', 'Invalid file name.');
         } else {
-            $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-            $filename = 'resume_' . $userId . '_' . uniqid() . '.' . $ext;
-            $dest     = UPLOAD_PATH . $filename;
-            if (move_uploaded_file($file['tmp_name'], $dest)) {
-                $resumeModel->create($userId, [
-                    'filename'      => $filename,
-                    'original_name' => $file['name'],
-                    'file_size'     => $file['size'],
-                    'version_label' => trim($_POST['version_label'] ?? ''),
-                    'is_default'    => !empty($_POST['is_default']) ? 1 : 0,
-                ]);
-                flash('success', 'Resume uploaded successfully.');
-            } else {
-                flash('error', 'Failed to save file. Check upload directory permissions.');
-            }
+          $filename = 'resume_' . $userId . '_' . uniqid() . '.' . $ext;
+          $dest     = UPLOAD_PATH . $filename;
+          if (move_uploaded_file($file['tmp_name'], $dest)) {
+            // Set file permissions to 0644 (not executable)
+            @chmod($dest, 0644);
+            $resumeModel->create($userId, [
+              'filename'      => $filename,
+              'original_name' => $file['name'],
+              'file_size'     => $file['size'],
+              'version_label' => trim($_POST['version_label'] ?? ''),
+              'is_default'    => !empty($_POST['is_default']) ? 1 : 0,
+            ]);
+            flash('success', 'Resume uploaded successfully.');
+          } else {
+            flash('error', 'Failed to save file. Check upload directory permissions.');
+          }
         }
+      }
     }
 
     if ($action === 'delete') {

@@ -41,8 +41,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
       'notes'        => trim($_POST['notes'] ?? ''),
       'applied_at'   => !empty($_POST['applied_at']) ? $_POST['applied_at'] : null,
     ];
-    if (empty($data['company']) || empty($data['job_title'])) {
-      json_response(['error' => 'Company and job title are required.'], 422);
+    $errors = [];
+    // Company and Job Title required
+    if (empty($data['company']) || strlen($data['company']) < 2 || strlen($data['company']) > 100) {
+      $errors[] = 'Company name is required (2-100 chars).';
+    }
+    if (empty($data['job_title']) || strlen($data['job_title']) < 2 || strlen($data['job_title']) > 100) {
+      $errors[] = 'Job title is required (2-100 chars).';
+    }
+    // Salary validation (optional, but must be a valid format if present)
+    if ($data['salary_range'] && !preg_match('/^[\\d,\\s\\$kK\\-–]+$/', $data['salary_range'])) {
+      $errors[] = 'Please enter a valid salary (e.g., 50000, $50k–$70k).';
+    }
+    // Job URL validation (auto-prepend https:// if missing)
+    if ($data['job_url']) {
+      $url = $data['job_url'];
+      if (!preg_match('/^https?:\/\//i', $url)) {
+        $url = 'https://' . $url;
+      }
+      if (!filter_var($url, FILTER_VALIDATE_URL)) {
+        $errors[] = 'Please enter a valid job URL (e.g., https://example.com).';
+      } else {
+        $data['job_url'] = $url;
+      }
+    }
+    // Applied date validation
+    if ($data['applied_at'] && strtotime($data['applied_at']) > time()) {
+      $errors[] = 'Applied date cannot be in the future.';
+    }
+    // Notes length
+    if ($data['notes'] && strlen($data['notes']) > 1000) {
+      $errors[] = 'Notes must be less than 1000 characters.';
+    }
+    // Resume ID (if provided, must be numeric)
+    if ($data['resume_id'] && !is_numeric($data['resume_id'])) {
+      $errors[] = 'Invalid resume selection.';
+    }
+    if ($errors) {
+      json_response(['error' => implode(' ', $errors)], 422);
     }
     if ($action === 'create') {
       $newId = $appModel->create($userId, $data);

@@ -14,6 +14,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$name || !$email || !$password) {
           $error = 'All required fields must be filled.';
+        } elseif (!preg_match("/^[a-zA-Z .'-]{2,50}$/u", $name)) {
+          $error = 'Name must only contain letters, spaces, hyphens, apostrophes, and dots (2-50 chars).';
+        } elseif (preg_match('/<[^>]+>/', $name)) {
+          $error = 'Name cannot contain HTML or script tags.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
           $error = 'Invalid email address.';
         } elseif (strlen($password) < 8) {
@@ -53,7 +57,9 @@ $csrf = Auth::csrfToken();
 <body class="auth-page">
 <div class="auth-card">
   <div class="auth-logo">
-    <div class="brand-icon"><i class="bi bi-briefcase-fill"></i></div>
+    <div class="brand-icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;overflow:hidden;padding:0;box-shadow:0 2px 12px 0 rgba(30, 64, 175, 0.18);">
+      <img src="<?= APP_URL ?>/uploads/resumes/job_logo.png" alt="Logo" style="width:140%;height:140%;object-fit:cover;display:block;margin-left:-10%;margin-top:-10%;">
+    </div>
     <span class="brand-name">JobTracker</span>
   </div>
   <h2 class="text-center mb-1" style="font-family:'Sora',sans-serif;font-size:22px">Create your account</h2>

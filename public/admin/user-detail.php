@@ -59,17 +59,17 @@ ob_start();
 
         <div style="margin-bottom:15px">
           <label style="font-size:12px; color:#9ca3af; font-weight:600">Plan</label>
-          <div style="font-size:14px; margin-top:4px"><?= ucfirst($user['plan']) ?> Plan</div>
+          <div style="font-size:14px; margin-top:4px"><?= h(ucfirst($user['plan'])) ?> Plan</div>
         </div>
 
         <div style="margin-bottom:15px">
           <label style="font-size:12px; color:#9ca3af; font-weight:600">Joined</label>
-          <div style="font-size:14px; margin-top:4px"><?= date('F d, Y at g:i A', strtotime($user['created_at'])) ?></div>
+          <div style="font-size:14px; margin-top:4px"><?= h(date('F d, Y at g:i A', strtotime($user['created_at']))) ?></div>
         </div>
 
         <div style="margin-bottom:15px">
           <label style="font-size:12px; color:#9ca3af; font-weight:600">Applications Created</label>
-          <div style="font-size:14px; margin-top:4px"><?= $userAppCount ?> applications</div>
+          <div style="font-size:14px; margin-top:4px"><?= h($userAppCount) ?> applications</div>
         </div>
       </div>
     </div>
