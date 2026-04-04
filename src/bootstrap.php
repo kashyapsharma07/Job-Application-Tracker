@@ -38,8 +38,8 @@ header('X-XSS-Protection: 1; mode=block');
 // Enforce HTTPS for all future requests (1 year, include subdomains)
 header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
 
-// Content Security Policy — restrict resource loading
-header("Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data: https:;");
+// Content Security Policy — disabled for development, enable on production
+// header("Content-Security-Policy: default-src 'self' https:; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net https:; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net https:; img-src 'self' data: https: http:; connect-src 'self' https: http:;");
 
 // Prevent referrer leaking on external links
 header('Referrer-Policy: strict-origin-when-cross-origin');

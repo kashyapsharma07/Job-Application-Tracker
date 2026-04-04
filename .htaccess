@@ -2,10 +2,17 @@
     RewriteEngine On
     RewriteBase /jobtracker/
     
-    # Allow direct access to existing files and directories
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
+    # If it's a real file or directory, serve it as-is
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
     
-    # Rewrite all other requests to index.php
-    RewriteRule ^(.*)$ public/index.php [QSA,L]
+    # For static assets (css, js, uploads, images), map to public folder but don't recurse
+    RewriteRule ^(css|js|uploads|images)\/(.*)$ public/$1/$2 [L,NE]
+    
+    # For .php files, map to public folder
+    RewriteRule ^([a-z\-]+\.php)$ public/$1 [L,NE]
+    
+    # Everything else goes to index.php  
+    RewriteRule ^ public/index.php [L,QSA]
 </IfModule>

@@ -1,8 +1,19 @@
+
 <?php
+require_once __DIR__ . '/../vendor/autoload.php';
+
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
+$dotenv->load();
 // config/config.php
 
 define('APP_NAME', 'JobTracker');
-define('APP_URL', 'https://unarousable-nontraceable-kira.ngrok-free.dev/jobtracker');
+
+// Auto-detect APP_URL based on current domain (works with localhost, ngrok, production)
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+$basePath = '/jobtracker';
+define('APP_URL', $protocol . '://' . $host . $basePath);
+
 define('APP_VERSION', '1.0.0');
 
 // Database
@@ -35,3 +46,7 @@ define('SMTP_FROM_EMAIL', 'kashyaps1304@gmail.com');  // Must match SMTP_USER fo
 // Security
 define('CSRF_TOKEN_NAME', 'csrf_token');
 define('HASH_COST', 12);
+
+// Payment Gateway (Razorpay)
+define('RAZORPAY_KEY_ID', $_ENV['RAZORPAY_KEY_ID']);
+define('RAZORPAY_KEY_SECRET', $_ENV['RAZORPAY_KEY_SECRET']);

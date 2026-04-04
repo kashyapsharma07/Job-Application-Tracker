@@ -34,6 +34,27 @@ function initApplicationsPage() {
     });
   }
 
+  // Prevent accidental form submission via Enter key
+  form.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+    }
+  });
+
+  // Disable save button by default - enable only on user interaction
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Save Application';
+  
+  form.addEventListener('change', () => {
+    saveBtn.disabled = false;
+  });
+  form.addEventListener('focus', () => {
+    saveBtn.disabled = false;
+  }, true);
+  saveBtn.addEventListener('mouseenter', () => {
+    saveBtn.disabled = false;
+  });
+
   // Edit buttons (kanban)
   document.querySelectorAll('.btn-edit').forEach(btn => {
     btn.addEventListener('click', e => {
@@ -59,9 +80,20 @@ function initApplicationsPage() {
     });
   });
 
-  // Save
+  // Save - require genuine user click (not form filler)
+  let userClickOnly = false;
+  document.addEventListener('mousedown', () => { userClickOnly = true; });
+  document.addEventListener('touchstart', () => { userClickOnly = true; });
+  form.addEventListener('keydown', () => { userClickOnly = true; });
+  
   if (saveBtn) {
     saveBtn.addEventListener('click', async () => {
+      // Reject if triggered by form filler (no user interaction detected)
+      if (!userClickOnly) {
+        return;
+      }
+      userClickOnly = false; // Reset for next action
+      
       const company   = document.getElementById('f_company').value.trim();
       const job_title = document.getElementById('f_job_title').value.trim();
       if (!company || !job_title) {
@@ -77,8 +109,8 @@ function initApplicationsPage() {
       saveBtn.textContent = 'Save Application';
       if (res.ok) {
         modal.hide();
-          // Force redirect to correct path for new application
-          window.location = '/jobtracker/applications.php?action=new';
+        // Reload page to show new application
+        window.location = '/jobtracker/applications.php';
       } else {
         alert(res.error || 'An error occurred.');
       }
@@ -145,6 +177,23 @@ function quickStatus(appId, status) {
 function initAnalytics() {
   // intentionally empty — chart + bar animation are bootstrapped
   // inline in analytics.php so they run after the DOM and Chart.js are ready
+}
+
+function paymentHandler(response) {
+     fetch('verify_payment.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(response)  
+     })
+     .then(res => res.json())
+     .then(data => {
+          if (data.success) {
+                alert('Payment successful! Premium features unlocked.');
+                window.location.href = "dashboard.php";
+          } else {
+                alert('Payment verification failed.');
+          }
+     });
 }
 
 // ── Resume Page ─────────────────────────────────────────────────────────────

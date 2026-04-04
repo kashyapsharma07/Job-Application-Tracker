@@ -3,6 +3,12 @@ require_once __DIR__ . '/../src/bootstrap.php';
 Auth::require();
 
 $userId   = Auth::id();
+
+// ── Premium access check ──────────────────────────────────────────────────────
+$user = Auth::user();
+$userRole = $user['role'] ?? 'user';
+$userPlan = $user['plan'] ?? 'free';
+$isPremium = ($userRole === 'admin' || $userPlan === 'premium');
 $appModel = new Application();
 
 // ── Core data ─────────────────────────────────────────────────────────────────
@@ -526,5 +532,31 @@ $inlineScript = <<<JS
 JS;
 
 include __DIR__ . '/../views/partials/header.php';
-echo $content;
+
+// ── Output content with paywall if not premium ────────────────────────────────
+if ($isPremium) {
+    echo $content;
+} else {
+    ?>
+    <style>
+        body {
+            overflow: hidden;
+        }
+    </style>
+    <div class="premium-paywall-container locked">
+        <div class="premium-paywall-content blurred">
+            <?= $content ?>
+        </div>
+        <div class="premium-paywall-overlay">
+            <i class="bi bi-lock-fill"></i>
+            <h3>Unlock Analytics</h3>
+            <p>Upgrade to Premium to access detailed analytics, insights, and advanced features.</p>
+            <a href="<?= APP_URL ?>/go-premium.php" class="premium-paywall-btn">
+                <i class="bi bi-star-fill"></i> Upgrade to Premium
+            </a>
+        </div>
+    </div>
+    <?php
+}
+
 include __DIR__ . '/../views/partials/footer.php';

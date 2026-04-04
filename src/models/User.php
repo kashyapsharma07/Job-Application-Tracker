@@ -42,7 +42,7 @@ class User
     {
         $fields = [];
         $values = [];
-        $allowed = ['name', 'job_title', 'avatar', 'email_alerts', 'interview_reminders', 'marketing_comms'];
+        $allowed = ['name', 'job_title', 'avatar', 'email_alerts', 'interview_reminders', 'marketing_comms', 'plan'];
         foreach ($allowed as $field) {
             if (array_key_exists($field, $data)) {
                 $fields[] = "$field = ?";
