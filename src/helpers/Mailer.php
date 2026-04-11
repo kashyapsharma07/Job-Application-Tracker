@@ -3,9 +3,11 @@
 // Uses PHPMailer (install via Composer: composer require phpmailer/phpmailer)
 // Falls back to PHP mail() if PHPMailer not available
 
-class Mailer {
+class Mailer
+{
 
-    public static function send(string $to, string $toName, string $subject, string $htmlBody): bool {
+    public static function send(string $to, string $toName, string $subject, string $htmlBody): bool
+    {
         // Try PHPMailer if available
         if (class_exists('PHPMailer\PHPMailer\PHPMailer')) {
             return self::sendWithPHPMailer($to, $toName, $subject, $htmlBody);
@@ -17,7 +19,8 @@ class Mailer {
         return mail($to, $subject, $htmlBody, $headers);
     }
 
-    private static function sendWithPHPMailer(string $to, string $toName, string $subject, string $html): bool {
+    private static function sendWithPHPMailer(string $to, string $toName, string $subject, string $html): bool
+    {
         $mail = new PHPMailer\PHPMailer\PHPMailer(true);
         try {
             $mail->isSMTP();
@@ -40,7 +43,8 @@ class Mailer {
         }
     }
 
-    public static function reminderEmail(array $reminder): string {
+    public static function reminderEmail(array $reminder): string
+    {
         $company  = htmlspecialchars($reminder['company'] ?? 'a company');
         $jobTitle = htmlspecialchars($reminder['job_title'] ?? 'a position');
         $title    = htmlspecialchars($reminder['title']);

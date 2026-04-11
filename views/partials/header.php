@@ -75,7 +75,7 @@ $currentPage = $currentPage ?? '';
       <div class="user-card">
         <div class="user-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden">
           <?php if (!empty($currentUser['avatar'])): ?>
-            <img src="<?= APP_URL ?>/uploads/avatars/<?= h($currentUser['avatar']) ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
+            <img src="<?= APP_URL ?>/uploads/avatars/<?= h($currentUser['avatar']) ?>?v=<?= time() ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
           <?php else: ?>
             <?= strtoupper(substr($currentUser['name'], 0, 1)) ?>
           <?php endif; ?>
