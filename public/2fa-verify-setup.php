@@ -8,6 +8,15 @@ if (!$userId) {
     redirect('/login.php');
 }
 
+// Check if 2FA verification has timed out (30 minutes)
+$twoFaStartTime = $_SESSION['pending_2fa_start_time'] ?? time();
+if ((time() - $twoFaStartTime) > 30) { // 30 seconds
+    unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_email'], $_SESSION['pending_2fa_start_time']);
+    flash('error', '2FA verification session expired. Please log in again.');
+    redirect('/login.php');
+}
+$_SESSION['pending_2fa_start_time'] = $twoFaStartTime;
+
 $userModel = new User();
 $user = $userModel->findById($userId);
 
@@ -25,14 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 /** @var \PragmaRX\Google2FA\Google2FA $google2fa */
                 $google2fa = new Google2FA();
-                if (!$google2fa->verifyKey($user['twofa_secret'], $code, 2)) {
+                // 0 = only current 30-second window, no tolerance
+                if (!$google2fa->verifyKey($user['twofa_secret'], $code, 0)) {
                     $error = 'The code you entered is incorrect. Please try again.';
                 } else {
                     Database::getInstance()->prepare('UPDATE users SET twofa_enabled = 1, twofa_setup_required = 0 WHERE id = ?')
                         ->execute([$userId]);
 
                     Auth::login($user);
-                    unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_email']);
+                    unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_email'], $_SESSION['pending_2fa_start_time']);
                     redirect('/dashboard.php');
                 }
             }

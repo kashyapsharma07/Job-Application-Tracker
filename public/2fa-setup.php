@@ -8,6 +8,15 @@ if (!$userId) {
     redirect('/login.php');
 }
 
+// Check if 2FA verification has timed out (30 minutes)
+$twoFaStartTime = $_SESSION['pending_2fa_start_time'] ?? time();
+if ((time() - $twoFaStartTime) > 30) { // 30 seconds
+    unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_email'], $_SESSION['pending_2fa_start_time']);
+    flash('error', '2FA verification session expired. Please log in again.');
+    redirect('/login.php');
+}
+$_SESSION['pending_2fa_start_time'] = $twoFaStartTime;
+
 $userModel = new User();
 $user = $userModel->findById($userId);
 

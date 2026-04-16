@@ -27,11 +27,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Store user info in session for 2FA setup (not yet logged in)
                     $_SESSION['pending_2fa_user_id'] = $user['id'];
                     $_SESSION['pending_2fa_email'] = $user['email'];
+                    $_SESSION['pending_2fa_start_time'] = time();
                     redirect('/2fa-setup.php');
                 } elseif (!empty($user['twofa_enabled']) && $user['twofa_enabled'] == 1) {
                     // User has 2FA enabled, need to verify code
                     $_SESSION['pending_2fa_user_id'] = $user['id'];
                     $_SESSION['pending_2fa_email'] = $user['email'];
+                    $_SESSION['pending_2fa_start_time'] = time();
                     redirect('/2fa-login.php');
                 } else {
                     // No 2FA, proceed with normal login
