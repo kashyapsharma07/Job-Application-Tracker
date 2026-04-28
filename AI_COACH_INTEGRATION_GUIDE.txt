@@ -1,0 +1,320 @@
+========================================
+AI CAREER COACH FEATURE - INTEGRATION GUIDE
+========================================
+
+This guide shows how to integrate the AI Career Coach feature into your JobTracker application.
+
+========================================
+STEP 1: ADD ANTHROPIC API KEY TO CONFIG
+========================================
+
+Open config/config.php and add your Anthropic API key:
+
+define('ANTHROPIC_API_KEY', 'sk-ant-your-key-here');
+
+You can get your API key from: https://console.anthropic.com
+
+========================================
+STEP 2: CREATE DATABASE TABLE
+========================================
+
+Run this SQL command to create the ai_suggestions table:
+
+CREATE TABLE IF NOT EXISTS ai_suggestions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL UNIQUE,
+  suggestions JSON,
+  score INT,
+  summary TEXT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_user_id (user_id),
+  INDEX idx_created_at (created_at)
+);
+
+========================================
+STEP 3: FILES CREATED FOR YOU
+========================================
+
+The following files have been created:
+
+1. public/ai_analyse.php
+   - Backend endpoint that handles the analysis request
+   - Fetches analytics data from the Application model
+   - Extracts PDF text from user's resume
+   - Calls Claude API with the prompt
+   - Caches results in the database
+   - Returns JSON response
+
+2. public/js/ai-resume.js
+   - Frontend JavaScript (IIFE wrapped)
+   - Handles button clicks
+   - Shows loading state
+   - Renders analysis results with animated score ring
+   - Displays suggestion cards with color-coding
+   - Loads cached data on page load
+
+3. html_snippet_ai_coach_panel.php (this file)
+   - The complete HTML/CSS for the AI Coach panel
+   - Premium gate for non-premium users
+   - Score ring visualization
+   - Summary section
+   - Suggestion cards grid
+   - All styling included
+
+4. sql/migrations/create_ai_suggestions_table.sql
+   - Database migration file
+
+========================================
+STEP 4: INTEGRATE INTO resume.php
+========================================
+
+Open public/resumes.php and add the AI coach panel.
+
+Find the section where you want to display the panel (e.g., after the resumes list).
+
+Add this code:
+
+<?php
+$isPremium = ($userRole === 'admin' || $userPlan === 'premium');
+$userId = Auth::id();
+ob_start();
+?>
+
+<!-- Include the AI Coach Panel HTML -->
+<?php include __DIR__ . '/../html_snippet_ai_coach_panel.php'; ?>
+
+<?php
+// Append to your page content
+$aiCoachPanel = ob_get_clean();
+// Add this to your $content variable or echo directly
+
+?>
+
+FULL EXAMPLE:
+=============
+
+At the top of your resume.php after auth checks, add:
+
+<?php
+require_once __DIR__ . '/../src/bootstrap.php';
+Auth::require();
+
+$userId = Auth::id();
+$userRole = Auth::user()['role'] ?? 'user';
+$userPlan = Auth::user()['plan'] ?? 'free';
+$isPremium = ($userRole === 'admin' || $userPlan === 'premium');
+
+// ... your existing resume.php code ...
+
+$pageTitle = 'Resumes';
+$currentPage = 'resumes';
+
+ob_start();
+?>
+
+<!-- Your existing resumes content here -->
+
+<?php
+// Start AI Coach panel output
+ob_start();
+?>
+
+<!-- AI Coach Panel - Premium Feature -->
+<?php
+$isPremium = ($userRole === 'admin' || $userPlan === 'premium');
+$userId = Auth::id();
+include __DIR__ . '/../html_snippet_ai_coach_panel.php';
+?>
+
+<?php
+// End AI Coach panel
+$aiCoachPanel = ob_get_clean();
+
+// Main content
+$content = ob_get_clean();
+$content .= $aiCoachPanel; // Append AI panel to content
+
+$inlineScript = ""; // Your existing inline scripts
+include __DIR__ . '/../views/partials/header.php';
+echo $content;
+include __DIR__ . '/../views/partials/footer.php';
+?>
+
+========================================
+STEP 5: ADD NAVIGATION LINK (OPTIONAL)
+========================================
+
+If you want to add an "AI Coach" link to your navigation, add this to header.php sidebar:
+
+<a href="<?= APP_URL ?>/resumes.php#ai-coach-panel" class="nav-item">
+  <i class="bi bi-cpu"></i> <span>AI Coach</span>
+</a>
+
+========================================
+HOW IT WORKS
+========================================
+
+1. User clicks "Analyse My Resume" button
+2. Frontend sends POST request to ai_analyse.php
+3. Backend:
+   - Checks if user is premium
+   - Fetches all analytics data (applications, conversion rates, etc.)
+   - Gets user's default resume (or latest)
+   - Extracts text from PDF using pdftotext (with fallback to raw text extraction)
+   - Builds a prompt with all the data
+   - Calls Claude Sonnet 4 API
+   - Parses JSON response
+   - Caches result in ai_suggestions table
+   - Returns success with data
+4. Frontend:
+   - Displays animated score ring
+   - Shows summary paragraph
+   - Renders suggestion cards with color-coding and priority labels
+   - Shows "Last analysed X mins ago" if data is cached
+5. On next visit, cached data loads automatically
+
+========================================
+FEATURES
+========================================
+
+✓ Premium-only feature with upgrade prompt
+✓ Analytics-aware analysis (reads actual user data)
+✓ Resume extraction with fallback mechanism
+✓ Claude AI analysis with specific, actionable suggestions
+✓ Result caching to avoid repeated API calls
+✓ Animated score ring (0-100)
+✓ Color-coded suggestion cards (add, improve, remove, warning)
+✓ Priority labels (high, medium, low)
+✓ Responsive grid layout
+✓ Loading states and error handling
+✓ CSRF protection
+✓ XSS protection via h() function
+✓ Zero jQuery - vanilla JS only
+
+========================================
+CUSTOMIZATION
+========================================
+
+Score Colors:
+  - Green (#10b981) for "add" suggestions
+  - Amber (#f59e0b) for "improve" suggestions
+  - Red (#ef4444) for "remove" suggestions
+  - Orange (#f97316) for "warning" suggestions
+
+Price:
+  - Change amount in ai_analyse.php or move to constants
+  - Currently hardcoded examples show ₹499 in go-premium.php
+
+API Model:
+  - Currently: claude-sonnet-4-20250514
+  - Change in ai_analyse.php if needed
+  - Max tokens: 1500 (adjustable)
+
+========================================
+ERROR HANDLING
+========================================
+
+The feature handles these cases gracefully:
+
+- User not premium → shows upgrade prompt
+- No resume uploaded → "Upload a resume first" message
+- PDF extraction fails → "Could not extract text from resume"
+- API error → "AI service unavailable"
+- Network error → Shows inline error in panel
+- User has < 3 applications → Shows "Add applications for insights"
+
+All errors are user-friendly, not technical dumps.
+
+========================================
+TESTING CHECKLIST
+========================================
+
+□ Free user sees premium gate and upgrade button
+□ Premium user sees analysis panel
+□ Click "Analyse My Resume" shows loading spinner
+□ Analysis completes and shows score, summary, suggestions
+□ Score ring animates from 0 to actual score
+□ Suggestion cards display with correct colors
+□ Priority badges show correct priority level
+□ "Last analysed X mins ago" displays if cached
+□ Click "Re-analyse" updates all data
+□ Error handling works (no resume, network error, etc.)
+□ Responsive design works on mobile
+□ No console errors
+□ CSRF protection working
+
+========================================
+DEPENDENCIES
+========================================
+
+- PHP 8+ (arrow functions, match, union types)
+- Claude API (requires valid ANTHROPIC_API_KEY)
+- MySQL (for caching)
+- pdftotext (optional, for PDF extraction; has fallback)
+- Bootstrap 5 (for styling)
+- Bootstrap Icons (for icons)
+- Application model (for analytics data)
+- User model (for DB operations)
+
+========================================
+TROUBLESHOOTING
+========================================
+
+Q: API returns 403 error
+A: Check if user is actually premium. Check user.plan in database.
+
+Q: PDF text extraction returns null
+A: 
+  - Install pdftotext: brew install poppler (macOS) or apt-get install poppler-utils (Linux)
+  - Check file permissions on /uploads/resumes/
+  - Ensure PDF is valid
+
+Q: Cached data not showing
+A: Check ai_suggestions table exists and has data for the user.
+
+Q: "API configuration error"
+A: Add ANTHROPIC_API_KEY to config/config.php
+
+Q: Suggestion cards not styled correctly
+A: Ensure ai-resume.js and CSS are loaded. Check browser console.
+
+Q: Score ring not animating
+A: Check browser supports SVG and CSS animations. Try Force refresh (Ctrl+Shift+R).
+
+========================================
+FILE LOCATIONS SUMMARY
+========================================
+
+Backend:
+  public/ai_analyse.php                    - Main API endpoint
+  
+Frontend:
+  public/js/ai-resume.js                   - JavaScript logic
+  html_snippet_ai_coach_panel.php          - HTML/CSS (integrate into resume.php)
+  
+Database:
+  sql/migrations/create_ai_suggestions_table.sql - Schema
+  
+Config:
+  config/config.php                         - Add ANTHROPIC_API_KEY
+  
+Resume.php:
+  public/resumes.php                        - Include the HTML snippet
+
+========================================
+NEXT STEPS
+========================================
+
+1. Add ANTHROPIC_API_KEY to config/config.php
+2. Run the SQL migration to create ai_suggestions table
+3. Add the HTML snippet to resume.php (see STEP 4)
+4. Load public/js/ai-resume.js in your header
+5. Test with a premium user account
+6. Test error cases (no resume, network error)
+7. Deploy to production
+
+========================================
+END OF INTEGRATION GUIDE
+========================================

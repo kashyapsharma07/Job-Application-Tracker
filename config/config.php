@@ -50,3 +50,7 @@ define('HASH_COST', 12);
 // Payment Gateway (Razorpay)
 define('RAZORPAY_KEY_ID', $_ENV['RAZORPAY_KEY_ID']);
 define('RAZORPAY_KEY_SECRET', $_ENV['RAZORPAY_KEY_SECRET']);
+
+// AI - OpenRouter API (Free Model: Ling 2.6)
+define('OPENROUTER_API_KEY', $_ENV['OPENROUTER_API_KEY']);
+define('OPENROUTER_MODEL', 'inclusionai/ling-2.6-1t:free');

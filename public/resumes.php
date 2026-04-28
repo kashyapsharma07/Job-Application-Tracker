@@ -5,6 +5,13 @@ Auth::require();
 $userId      = Auth::id();
 $resumeModel = new Resume();
 
+// Refresh premium status from database
+$userModel = new User();
+$freshUser = $userModel->findById($userId);
+if ($freshUser && isset($freshUser['is_premium'])) {
+    $_SESSION['user_is_premium'] = (bool)$freshUser['is_premium'];
+}
+
 // Handle upload
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!Auth::verifyCsrf($_POST['csrf_token'] ?? '')) {
@@ -174,6 +181,19 @@ ob_start();
     </div>
   </div>
 </div>
+
+<?php if (!empty($resumes)): ?>
+<!-- AI Career Coach Panel (Premium Feature) -->
+<div class="mt-5">
+  <?php 
+    $userId = Auth::id();
+    $currentUser = Auth::user();
+    $isPremium = (bool)($currentUser['is_premium'] ?? false);
+    include __DIR__ . '/../html_snippet_ai_coach_panel.php'; 
+  ?>
+</div>
+<?php endif; ?>
+
 <?php
 $content = ob_get_clean();
 $inlineScript = "initResumePage();";

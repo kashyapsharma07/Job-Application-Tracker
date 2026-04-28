@@ -40,6 +40,7 @@ class Auth
         $_SESSION['user_plan']    = $user['plan'];
         $_SESSION['user_role']    = $user['role'] ?? 'user';
         $_SESSION['user_avatar']  = $user['avatar'] ?? null;
+        $_SESSION['user_is_premium'] = (bool)($user['is_premium'] ?? 0);
         $_SESSION['logged_in']    = true;
         $_SESSION['user_ip']      = self::getClientIp();
         $_SESSION['user_agent']   = self::getUserAgent();
@@ -68,12 +69,13 @@ class Auth
     public static function user(): array
     {
         return [
-            'id'     => $_SESSION['user_id'] ?? null,
-            'name'   => $_SESSION['user_name'] ?? '',
-            'email'  => $_SESSION['user_email'] ?? '',
-            'plan'   => $_SESSION['user_plan'] ?? 'free',
-            'role'   => $_SESSION['user_role'] ?? 'user',
-            'avatar' => $_SESSION['user_avatar'] ?? null,
+            'id'         => $_SESSION['user_id'] ?? null,
+            'name'       => $_SESSION['user_name'] ?? '',
+            'email'      => $_SESSION['user_email'] ?? '',
+            'plan'       => $_SESSION['user_plan'] ?? 'free',
+            'role'       => $_SESSION['user_role'] ?? 'user',
+            'avatar'     => $_SESSION['user_avatar'] ?? null,
+            'is_premium' => (bool)($_SESSION['user_is_premium'] ?? false),
         ];
     }
 

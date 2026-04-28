@@ -84,7 +84,7 @@ echo $content;
 		name: "<?= $name ?>",
 		description: "<?= $description ?>",
 		appUrl: "<?= APP_URL ?>",
-		redirectUrl: "<?= APP_URL ?>/analytics.php"
+		redirectUrl: "<?= $_SERVER['HTTP_REFERER'] ?? APP_URL . '/resumes.php' ?>"
 	};
 </script>
 <script src="<?= APP_URL ?>/js/payment.js"></script>
