@@ -4,6 +4,9 @@ require_once __DIR__ . '/../vendor/autoload.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
+
+// Hide deprecation warnings (specifically for PHP 8.4+ and older vendor packages like bacon-qr-code)
+error_reporting(E_ALL & ~E_DEPRECATED);
 // config/config.php
 
 define('APP_NAME', 'JobTracker');
@@ -11,7 +14,7 @@ define('APP_NAME', 'JobTracker');
 // Auto-detect APP_URL based on current domain (works with localhost, ngrok, production)
 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$basePath = '/jobtracker';
+$basePath = (strpos($host, 'localhost:30') !== false) ? '/public' : '/jobtracker';
 define('APP_URL', $protocol . '://' . $host . $basePath);
 
 define('APP_VERSION', '1.0.0');
@@ -51,6 +54,6 @@ define('HASH_COST', 12);
 define('RAZORPAY_KEY_ID', $_ENV['RAZORPAY_KEY_ID']);
 define('RAZORPAY_KEY_SECRET', $_ENV['RAZORPAY_KEY_SECRET']);
 
-// AI - OpenRouter API (Free Model: Ling 2.6)
-define('OPENROUTER_API_KEY', $_ENV['OPENROUTER_API_KEY']);
-define('OPENROUTER_MODEL', 'inclusionai/ling-2.6-1t:free');
+// AI API Configuration (Groq)
+define('AI_API_KEY', $_ENV['GROQ_API_KEY'] ?? '');
+define('AI_MODEL', 'llama-3.3-70b-versatile');

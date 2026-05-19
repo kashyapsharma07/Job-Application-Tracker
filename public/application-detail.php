@@ -41,7 +41,7 @@ $currentPage = 'applications';
 ob_start();
 ?>
 <div class="mb-4">
-  <a href="/jobtracker/applications.php" class="text-decoration-none text-muted" style="font-size:13px">
+  <a href="<?= APP_URL ?>/applications.php" class="text-decoration-none text-muted" style="font-size:13px">
     <i class="bi bi-arrow-left me-1"></i> Back to Applications
   </a>
 </div>

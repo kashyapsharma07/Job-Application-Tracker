@@ -3,6 +3,7 @@ require_once __DIR__ . '/../src/bootstrap.php';
 Auth::require();
 
 header('Content-Type: application/json');
+set_time_limit(120);
 
 // Premium check
 $user = Auth::user();
@@ -141,9 +142,9 @@ Each suggestion MUST follow this format:
 PROMPT;
     
     
-    // ===== CALL OPENROUTER API =====
-    $apiKey = defined('OPENROUTER_API_KEY') ? OPENROUTER_API_KEY : '';
-    $model = defined('OPENROUTER_MODEL') ? OPENROUTER_MODEL : '';
+    // ===== CALL GROQ API =====
+    $apiKey = defined('AI_API_KEY') ? AI_API_KEY : '';
+    $model = defined('AI_MODEL') ? AI_MODEL : '';
     
     if (!$apiKey || !$model) {
         http_response_code(500);
@@ -153,7 +154,7 @@ PROMPT;
     
     $client = curl_init();
     curl_setopt_array($client, [
-        CURLOPT_URL => 'https://openrouter.ai/api/v1/chat/completions',
+        CURLOPT_URL => 'https://api.groq.com/openai/v1/chat/completions',
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER => [
             'Content-Type: application/json',

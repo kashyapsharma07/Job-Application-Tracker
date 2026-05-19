@@ -40,7 +40,7 @@ class Auth
         $_SESSION['user_plan']    = $user['plan'];
         $_SESSION['user_role']    = $user['role'] ?? 'user';
         $_SESSION['user_avatar']  = $user['avatar'] ?? null;
-        $_SESSION['user_is_premium'] = (bool)($user['is_premium'] ?? 0);
+        $_SESSION['user_is_premium'] = (isset($user['plan']) && $user['plan'] === 'premium');
         $_SESSION['logged_in']    = true;
         $_SESSION['user_ip']      = self::getClientIp();
         $_SESSION['user_agent']   = self::getUserAgent();

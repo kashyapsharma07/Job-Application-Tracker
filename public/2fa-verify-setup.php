@@ -41,6 +41,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     Database::getInstance()->prepare('UPDATE users SET twofa_enabled = 1, twofa_setup_required = 0 WHERE id = ?')
                         ->execute([$userId]);
 
+                    // Mark that 2FA has been verified for this session
+                    $_SESSION['2fa_verified'] = true;
+
                     Auth::login($user);
                     unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_email'], $_SESSION['pending_2fa_start_time']);
                     redirect('/dashboard.php');

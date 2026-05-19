@@ -1,4 +1,4 @@
-keep height and#!/usr/bin/env php
+#!/usr/bin/env php
 <?php
 /**
  * cron/send_reminders.php

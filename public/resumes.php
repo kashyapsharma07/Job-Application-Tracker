@@ -8,8 +8,9 @@ $resumeModel = new Resume();
 // Refresh premium status from database
 $userModel = new User();
 $freshUser = $userModel->findById($userId);
-if ($freshUser && isset($freshUser['is_premium'])) {
-    $_SESSION['user_is_premium'] = (bool)$freshUser['is_premium'];
+if ($freshUser && isset($freshUser['plan'])) {
+    $_SESSION['user_plan'] = $freshUser['plan'];
+    $_SESSION['user_is_premium'] = ($freshUser['plan'] === 'premium');
 }
 
 // Handle upload

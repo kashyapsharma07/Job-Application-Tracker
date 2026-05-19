@@ -67,7 +67,7 @@ function initApplicationsPage() {
   document.querySelectorAll('.btn-view').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-        window.location = '/jobtracker/application-detail.php?id=' + btn.dataset.id;
+        window.location = window.APP_URL + '/application-detail.php?id=' + btn.dataset.id;
     });
   });
 
@@ -110,7 +110,7 @@ function initApplicationsPage() {
       if (res.ok) {
         modal.hide();
         // Reload page to show new application
-        window.location = '/jobtracker/applications.php';
+        window.location = window.APP_URL + '/applications.php';
       } else {
         alert(res.error || 'An error occurred.');
       }
@@ -158,7 +158,7 @@ function initApplicationsPage() {
       timer = setTimeout(() => {
         const q = searchInput.value.trim();
         if (q.length > 1) {
-            window.location = '/jobtracker/applications.php?search=' + encodeURIComponent(q);
+            window.location = window.APP_URL + '/applications.php?search=' + encodeURIComponent(q);
         }
       }, 500);
     });
