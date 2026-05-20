@@ -86,22 +86,22 @@ try {
     $resumeTextTruncated = mb_substr($resumeText, 0, 6000);
     
     $prompt = <<<PROMPT
-You are a professional Resume Coach and ATS (Applicant Tracking System) expert.
+You are a brutal, highly critical FAANG Recruiter and ATS (Applicant Tracking System) expert. Your job is to rip this resume apart constructively. Do not sugarcoat your feedback. 
 
-Analyze the resume below and return a structured JSON report that a NON-TECHNICAL person can easily understand and act on.
+Analyze the resume below and return a structured JSON report that a NON-TECHNICAL person can understand. 
 
-=== SCORING RUBRIC (use this to calculate the score consistently) ===
-Start at 100 and deduct points:
-- Missing or weak professional summary: -15
-- No quantified achievements (numbers, percentages, dollar amounts): -15
-- Poor or missing action verbs at start of bullet points: -10
-- Missing important sections (Education, Skills, Experience): -10 each
-- Formatting issues (inconsistent dates, no bullet points, walls of text): -10
-- Too long (more than 2 pages worth of text): -5
-- Missing contact info (email, phone, LinkedIn): -5 each
-- Spelling/grammar errors: -5
-- No relevant keywords for the industry: -10
-Minimum score is 5.
+=== STRICT SCORING RUBRIC ===
+Do NOT default to 80-85. Be brutally honest. Most resumes are average (50-65).
+- 90-100: Exceptional. Perfect formatting, EVERY bullet has strong quantified metrics ($, %, #), zero fluff.
+- 70-89: Good, but missing some metrics. Uses weak verbs in a few places. Needs better impact statements.
+- 50-69: Average. Lists responsibilities instead of achievements. Missing numbers. Too much text.
+- Below 50: Poor. Missing core sections, bad formatting, no metrics, typos.
+
+=== RULES FOR SUGGESTIONS ===
+1. You MUST find exactly 4-6 specific things to fix.
+2. Focus on IMPACT. If a bullet says "Responsible for managing a team", your suggested text MUST rewrite it using the STAR method (e.g., "Directed a cross-functional team of 12 engineers, increasing delivery speed by 30%").
+3. Do NOT give vague advice like "Add more numbers". You must literally rewrite the sentence for them in `suggested_text`.
+4. Be specific and harsh if necessary. 
 
 === RESUME TEXT ===
 $resumeTextTruncated
@@ -113,29 +113,20 @@ Offer rate: $offerPct%
 Stalled applications: $stalledCount
 
 === INSTRUCTIONS ===
-Return valid JSON with this exact structure. Give exactly 4-6 suggestions, sorted by priority (high first).
-
-Each suggestion MUST follow this format:
-- "section": The exact resume section name (e.g., "Professional Summary", "Work Experience > Software Engineer at Google", "Skills", "Education", "Contact Info", "Overall Format")
-- "title": A short, clear action title that tells the user WHAT to do (e.g., "Add numbers to show your impact", "Rewrite your summary to highlight your strengths")
-- "type": One of "add", "improve", "remove", "warning"
-- "priority": One of "high", "medium", "low"
-- "current_text": The exact text or bullet point from the resume that needs changing. If adding something new, write "Not currently in your resume."
-- "suggested_text": The exact rewritten text the user should replace it with, or the new text to add. Write it word-for-word so the user can copy-paste it.
-- "explanation": In 1-2 simple sentences, explain WHY this change helps in plain English. Imagine you are talking to a friend who has never written a resume before.
+Return valid JSON with this exact structure:
 
 {
-  "score": <number 5-100>,
-  "summary": "<2-3 sentences: What is the overall impression of this resume? What are the TOP 2 things to fix first? Write as if talking to a friend.>",
+  "score": <number 5-100 based strictly on the rubric>,
+  "summary": "<2-3 sentences: Brutally honest overall impression. What are the biggest red flags? Write as if talking directly to the candidate.>",
   "suggestions": [
     {
-      "section": "<resume section>",
-      "title": "<clear action>",
+      "section": "<resume section (e.g., Work Experience, Professional Summary)>",
+      "title": "<clear action, e.g., Rewrite bullet to include metrics>",
       "type": "<add|improve|remove|warning>",
       "priority": "<high|medium|low>",
       "current_text": "<exact text from resume or 'Not currently in your resume.'>",
-      "suggested_text": "<exact replacement text, ready to copy-paste>",
-      "explanation": "<why this matters, in plain English>"
+      "suggested_text": "<exact replacement text, ready to copy-paste. Must be a vast improvement.>",
+      "explanation": "<why this specific change gets past ATS and impresses recruiters>"
     }
   ]
 }

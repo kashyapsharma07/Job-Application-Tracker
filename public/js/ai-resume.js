@@ -44,8 +44,10 @@
         fetch(basePath + '/ai_analyse.php', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
-            }
+                'Content-Type': 'application/json',
+                'ngrok-skip-browser-warning': '1'
+            },
+            credentials: 'same-origin'
         })
         .then(response => response.json())
         .then(result => {

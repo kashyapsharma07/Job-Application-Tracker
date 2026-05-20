@@ -5,16 +5,18 @@ require_once __DIR__ . '/../vendor/autoload.php';
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
 $dotenv->load();
 
-// Hide deprecation warnings (specifically for PHP 8.4+ and older vendor packages like bacon-qr-code)
+// Hide deprecation warnings (specifically for PHP 8.4+)
 error_reporting(E_ALL & ~E_DEPRECATED);
+
 // config/config.php
 
 define('APP_NAME', 'JobTracker');
 
 // Auto-detect APP_URL based on current domain (works with localhost, ngrok, production)
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$protocol = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-$basePath = (strpos($host, 'localhost:30') !== false) ? '/public' : '/jobtracker';
+// If using built-in PHP server (port 3000) or Ngrok tunneling to it
+$basePath = (strpos($host, 'localhost:30') !== false || strpos($host, 'ngrok') !== false) ? '/public' : '/jobtracker/public';
 define('APP_URL', $protocol . '://' . $host . $basePath);
 
 define('APP_VERSION', '1.0.0');
@@ -56,4 +58,4 @@ define('RAZORPAY_KEY_SECRET', $_ENV['RAZORPAY_KEY_SECRET']);
 
 // AI API Configuration (Groq)
 define('AI_API_KEY', $_ENV['GROQ_API_KEY'] ?? '');
-define('AI_MODEL', 'llama-3.3-70b-versatile');
+define('AI_MODEL', 'llama-3.1-8b-instant');
