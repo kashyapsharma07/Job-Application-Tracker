@@ -10,7 +10,7 @@ if (!$userId) {
 
 // Check if 2FA verification has timed out (30 minutes)
 $twoFaStartTime = $_SESSION['pending_2fa_start_time'] ?? time();
-if ((time() - $twoFaStartTime) > 30) { // 30 seconds
+if ((time() - $twoFaStartTime) > 1800) { // 30 minutes
     unset($_SESSION['pending_2fa_user_id'], $_SESSION['pending_2fa_email'], $_SESSION['pending_2fa_start_time']);
     flash('error', '2FA verification session expired. Please log in again.');
     redirect('/login.php');

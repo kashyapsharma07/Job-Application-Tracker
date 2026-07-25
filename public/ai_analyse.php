@@ -1,4 +1,5 @@
 <?php
+error_reporting(E_ALL & ~E_DEPRECATED);
 require_once __DIR__ . '/../src/bootstrap.php';
 Auth::require();
 
@@ -21,10 +22,10 @@ try {
     // ===== FETCH ANALYTICS DATA =====
     $appModel = new Application();
     
-    $total = $appModel->countByStatus($userId)['total'] ?? 0;
+    $statuses = $appModel->countByStatus($userId);
+    $total = array_sum($statuses);
     $thisMonth = $appModel->countThisMonth($userId) ?? 0;
     
-    $statuses = $appModel->countByStatus($userId);
     $wishlist = $statuses['wishlist'] ?? 0;
     $applied = $statuses['applied'] ?? 0;
     $interviewing = $statuses['interviewing'] ?? 0;
@@ -163,7 +164,9 @@ PROMPT;
             'response_format' => ['type' => 'json_object']
         ]),
         CURLOPT_TIMEOUT => 60,
-        CURLOPT_CONNECTTIMEOUT => 10
+        CURLOPT_CONNECTTIMEOUT => 10,
+        CURLOPT_SSL_VERIFYPEER => false, 
+        CURLOPT_SSL_VERIFYHOST => false
     ]);
     
     $response = curl_exec($client);
@@ -173,13 +176,16 @@ PROMPT;
     
     if ($curlError) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Network error. Please ensure your internet connection is active and try again.']);
+        error_log('AI Analyse cURL Error: ' . $curlError);
+        echo json_encode(['success' => false, 'error' => 'Network cURL error: ' . $curlError]);
         exit;
     }
     
     if (!$response || $httpCode !== 200) {
         http_response_code(500);
-        $errorMsg = 'AI service error. Please try again in a moment.';
+        error_log("AI service returned HTTP Code $httpCode. Response: " . $response);
+        $errDetail = json_decode($response, true);
+        $errorMsg = $errDetail['error']['message'] ?? 'AI service error (HTTP ' . $httpCode . '). Please try again.';
         echo json_encode(['success' => false, 'error' => $errorMsg]);
         exit;
     }
@@ -187,7 +193,8 @@ PROMPT;
     $data = json_decode($response, true);
     if (!isset($data['choices'][0]['message']['content'])) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Invalid response from AI service.']);
+        error_log('Invalid AI payload structure: ' . $response);
+        echo json_encode(['success' => false, 'error' => 'Invalid response structure from AI service.']);
         exit;
     }
     
@@ -212,7 +219,7 @@ PROMPT;
     if (!$suggestions || !isset($suggestions['summary']) || !isset($suggestions['score'])) {
         http_response_code(500);
         error_log('AI raw response for debugging: ' . substr($aiText, 0, 2000));
-        echo json_encode(['success' => false, 'error' => 'AI response parsing failed. Please try again.']);
+        echo json_encode(['success' => false, 'error' => 'AI response parsing failed. Raw response: ' . substr($aiText, 0, 300)]);
         exit;
     }
     
@@ -246,11 +253,11 @@ PROMPT;
     
 } catch (Exception $e) {
     http_response_code(500);
+    error_log('AI Analyse Error: ' . $e->getMessage());
     echo json_encode([
         'success' => false,
-        'error' => 'An unexpected error occurred. Please try again.'
+        'error' => 'An unexpected error occurred: ' . $e->getMessage()
     ]);
-    error_log('AI Analyse Error: ' . $e->getMessage());
 }
 
 // ===== HELPER: EXTRACT PDF TEXT =====

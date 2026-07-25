@@ -1,4 +1,3 @@
-
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -22,10 +21,11 @@ define('APP_URL', $protocol . '://' . $host . $basePath);
 define('APP_VERSION', '1.0.0');
 
 // Database
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'jobtracker');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? 'localhost');
+define('DB_PORT', $_ENV['DB_PORT'] ?? $_SERVER['DB_PORT'] ?? '3306');
+define('DB_NAME', $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? 'jobtracker');
+define('DB_USER', $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? 'root');
+define('DB_PASS', $_ENV['DB_PASS'] ?? $_SERVER['DB_PASS'] ?? '');
 define('DB_CHARSET', 'utf8mb4');
 
 // Session
