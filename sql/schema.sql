@@ -1,8 +1,8 @@
 -- JobTracker Database Schema
 -- MySQL 8.0+
 
-CREATE DATABASE IF NOT EXISTS jobtracker CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE jobtracker;
+-- CREATE DATABASE IF NOT EXISTS jobtracker CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- USE jobtracker;
 
 -- Users table
 CREATE TABLE users (
