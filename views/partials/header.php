@@ -24,6 +24,8 @@ $currentPage = $currentPage ?? '';
 <div class="app-wrapper">
   <!-- Sidebar -->
   <aside class="sidebar">
+    <!-- Close button for mobile screens -->
+    <button type="button" class="btn-close d-md-none position-absolute top-0 end-0 m-3" id="sidebarClose" aria-label="Close"></button>
     <a href="<?= APP_URL ?>/dashboard.php" class="sidebar-brand" style="text-decoration:none">
       <div class="brand-icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;overflow:hidden;padding:0;">
         <img src="<?= APP_URL ?>/uploads/resumes/job_logo.png" alt="Logo" style="width:180%;height:180%;object-fit:cover;display:block;">
@@ -94,7 +96,10 @@ $currentPage = $currentPage ?? '';
   <main class="main-content">
     <!-- Top bar -->
     <div class="topbar">
-      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+      <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;">
+        <button class="btn btn-outline-secondary d-md-none" id="sidebarToggle" style="padding: 4px 10px; font-size: 18px; border-color: var(--border);">
+          <i class="bi bi-list"></i>
+        </button>
         <div class="topbar-search">
           <i class="bi bi-search"></i>
           <input type="text" id="globalSearch" placeholder="Search applications..." autocomplete="off">

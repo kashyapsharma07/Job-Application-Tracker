@@ -259,12 +259,39 @@ async function postFormData(fd) {
   }
 }
 
-// Auto-dismiss alerts after 4 s
+// Auto-dismiss alerts after 4 s and setup mobile sidebar toggle
 document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.alert-dismissible').forEach(el => {
     setTimeout(() => {
       const bsAlert = bootstrap.Alert.getOrCreateInstance(el);
-      bsAlert.close();
+      if (bsAlert) bsAlert.close();
     }, 4000);
+  });
+
+  // Mobile sidebar toggle handlers
+  const sidebar = document.querySelector('.sidebar');
+  const toggleBtn = document.getElementById('sidebarToggle');
+  const closeBtn = document.getElementById('sidebarClose');
+
+  if (toggleBtn && sidebar) {
+    toggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sidebar.classList.toggle('open');
+    });
+  }
+
+  if (closeBtn && sidebar) {
+    closeBtn.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+    });
+  }
+
+  // Close sidebar on tapping main content on mobile if sidebar is open
+  document.addEventListener('click', (e) => {
+    if (sidebar && sidebar.classList.contains('open')) {
+      if (!sidebar.contains(e.target) && e.target !== toggleBtn) {
+        sidebar.classList.remove('open');
+      }
+    }
   });
 });
