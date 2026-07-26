@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../');
-$dotenv->load();
+$dotenv->safeLoad();
 
 // Hide deprecation warnings (specifically for PHP 8.4+)
 error_reporting(E_ALL & ~E_DEPRECATED);
