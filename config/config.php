@@ -12,8 +12,8 @@ error_reporting(E_ALL & ~E_DEPRECATED);
 define('APP_NAME', 'JobTracker');
 
 // Auto-detect APP_URL based on current domain (works with localhost, ngrok, production)
-if (isset($_ENV['APP_URL']) || isset($_SERVER['APP_URL'])) {
-    define('APP_URL', $_ENV['APP_URL'] ?? $_SERVER['APP_URL']);
+if (getenv('APP_URL')) {
+    define('APP_URL', getenv('APP_URL'));
 } else {
     $protocol = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -25,11 +25,11 @@ if (isset($_ENV['APP_URL']) || isset($_SERVER['APP_URL'])) {
 define('APP_VERSION', '1.0.0');
 
 // Database
-define('DB_HOST', $_ENV['DB_HOST'] ?? $_SERVER['DB_HOST'] ?? 'localhost');
-define('DB_PORT', $_ENV['DB_PORT'] ?? $_SERVER['DB_PORT'] ?? '3306');
-define('DB_NAME', $_ENV['DB_NAME'] ?? $_SERVER['DB_NAME'] ?? 'jobtracker');
-define('DB_USER', $_ENV['DB_USER'] ?? $_SERVER['DB_USER'] ?? 'root');
-define('DB_PASS', $_ENV['DB_PASS'] ?? $_SERVER['DB_PASS'] ?? '');
+define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
+define('DB_PORT', getenv('DB_PORT') ?: '3306');
+define('DB_NAME', getenv('DB_NAME') ?: 'jobtracker');
+define('DB_USER', getenv('DB_USER') ?: 'root');
+define('DB_PASS', getenv('DB_PASS') !== false ? getenv('DB_PASS') : '');
 define('DB_CHARSET', 'utf8mb4');
 
 // Session
