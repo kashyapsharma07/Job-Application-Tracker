@@ -1619,3 +1619,34 @@ body.premium-page { overflow: hidden; }
 
 /* ─────────────────────────────────────────────────────────────────────────── */
 .badge-rejected { background: #fee2e2; color: #991b1b; }
+
+/* Mobile Stats Grid Scroll Overrides */
+@media (max-width: 768px) {
+  .stat-grid {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 12px !important;
+    padding-bottom: 8px !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+    margin-bottom: 16px !important;
+  }
+  .stat-grid::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+  }
+  .stat-card {
+    min-width: 140px !important;
+    max-width: 140px !important;
+    flex: 0 0 140px !important;
+    padding: 14px 12px !important;
+  }
+  .stat-label {
+    font-size: 10px !important;
+    letter-spacing: 0.2px !important;
+  }
+  .stat-value {
+    font-size: 22px !important;
+    margin-bottom: 4px !important;
+  }
+}
