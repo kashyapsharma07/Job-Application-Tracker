@@ -32,27 +32,31 @@
     </div>
     
     <?php
-    // Load cached data if available
-    $db = Database::getInstance();
-    $stmt = $db->prepare('SELECT suggestions, score, summary, updated_at FROM ai_suggestions WHERE user_id = ? LIMIT 1');
-    $stmt->execute([$userId]);
-    $cached = $stmt->fetch();
-    
-    if ($cached) {
-        $suggestions = json_decode($cached['suggestions'], true) ?? [];
-        $score = $cached['score'] ?? 0;
-        $summary = $cached['summary'] ?? '';
-        $cachedAt = $cached['updated_at'];
-        ?>
-        <script>
-        window.AI_CACHED_DATA = {
-            summary: <?= json_encode($summary) ?>,
-            score: <?= (int)$score ?>,
-            suggestions: <?= json_encode($suggestions) ?>
-        };
-        </script>
-        <input type="hidden" id="ai-cached-at" value="<?= h($cachedAt) ?>">
-        <?php
+    try {
+        // Load cached data if available
+        $db = Database::getInstance();
+        $stmt = $db->prepare('SELECT suggestions, score, summary, updated_at FROM ai_suggestions WHERE user_id = ? LIMIT 1');
+        $stmt->execute([$userId]);
+        $cached = $stmt->fetch();
+        
+        if ($cached) {
+            $suggestions = json_decode($cached['suggestions'], true) ?? [];
+            $score = $cached['score'] ?? 0;
+            $summary = $cached['summary'] ?? '';
+            $cachedAt = $cached['updated_at'];
+            ?>
+            <script>
+            window.AI_CACHED_DATA = {
+                summary: <?= json_encode($summary) ?>,
+                score: <?= (int)$score ?>,
+                suggestions: <?= json_encode($suggestions) ?>
+            };
+            </script>
+            <input type="hidden" id="ai-cached-at" value="<?= h($cachedAt) ?>">
+            <?php
+        }
+    } catch (Exception $e) {
+        error_log('AI Suggestions Cache Read Error: ' . $e->getMessage());
     }
     ?>
     
