@@ -57,9 +57,9 @@ define('CSRF_TOKEN_NAME', 'csrf_token');
 define('HASH_COST', 12);
 
 // Payment Gateway (Razorpay)
-define('RAZORPAY_KEY_ID', $_ENV['RAZORPAY_KEY_ID']);
-define('RAZORPAY_KEY_SECRET', $_ENV['RAZORPAY_KEY_SECRET']);
+define('RAZORPAY_KEY_ID', getenv('RAZORPAY_KEY_ID') ?: '');
+define('RAZORPAY_KEY_SECRET', getenv('RAZORPAY_KEY_SECRET') ?: '');
 
 // AI API Configuration (Groq)
-define('AI_API_KEY', $_ENV['GROQ_API_KEY'] ?? '');
+define('AI_API_KEY', getenv('GROQ_API_KEY') ?: '');
 define('AI_MODEL', 'llama-3.1-8b-instant');
