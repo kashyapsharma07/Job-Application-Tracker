@@ -13,11 +13,15 @@ Auth::require();
 $amount = 100; // Amount in paise (₹1.00) — must match go-premium.php
 $currency = 'INR';
 
-$api = new Api(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
-$order = $api->order->create([
-    'amount'          => $amount,
-    'currency'        => $currency,
-    'payment_capture' => 1
-]);
-
-echo json_encode(['order_id' => $order['id']]);
+try {
+    $api = new Api(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET);
+    $order = $api->order->create([
+        'amount'          => $amount,
+        'currency'        => $currency,
+        'payment_capture' => 1
+    ]);
+    echo json_encode(['order_id' => $order['id']]);
+} catch (Exception $e) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Razorpay Error: ' . $e->getMessage()]);
+}

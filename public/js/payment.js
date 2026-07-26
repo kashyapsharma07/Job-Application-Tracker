@@ -67,7 +67,7 @@
 
 				if (!data.order_id) {
 					console.error('No order_id in response', data);
-					showError('Could not create payment order. Please try again.');
+					showError('Could not create payment order: ' + (data.error || 'Please try again.'));
 					resetButton(btn);
 					return;
 				}
