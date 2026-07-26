@@ -12,11 +12,15 @@ error_reporting(E_ALL & ~E_DEPRECATED);
 define('APP_NAME', 'JobTracker');
 
 // Auto-detect APP_URL based on current domain (works with localhost, ngrok, production)
-$protocol = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'localhost';
-// If using built-in PHP server (port 3000) or Ngrok tunneling to it
-$basePath = (strpos($host, 'localhost:30') !== false || strpos($host, 'ngrok') !== false) ? '/public' : '/jobtracker/public';
-define('APP_URL', $protocol . '://' . $host . $basePath);
+if (isset($_ENV['APP_URL']) || isset($_SERVER['APP_URL'])) {
+    define('APP_URL', $_ENV['APP_URL'] ?? $_SERVER['APP_URL']);
+} else {
+    $protocol = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    // If using built-in PHP server (port 3000) or Ngrok tunneling to it
+    $basePath = (strpos($host, 'localhost:30') !== false || strpos($host, 'ngrok') !== false) ? '/public' : '/jobtracker/public';
+    define('APP_URL', $protocol . '://' . $host . $basePath);
+}
 
 define('APP_VERSION', '1.0.0');
 
