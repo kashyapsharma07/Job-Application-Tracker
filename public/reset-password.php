@@ -1,8 +1,10 @@
 <?php
 require_once __DIR__ . '/../src/bootstrap.php';
 
-// HTTPS Enforcement for sensitive auth pages
-if (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] !== 'on') {
+// HTTPS Enforcement for sensitive auth pages (allows HTTP on localhost/127.0.0.1 for dev)
+$isHttps = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on');
+$isLocalhost = strpos($_SERVER['HTTP_HOST'] ?? '', 'localhost') !== false || strpos($_SERVER['HTTP_HOST'] ?? '', '127.0.0.1') !== false;
+if (!$isHttps && !$isLocalhost) {
     redirect('/login.php');
 }
 

@@ -9,12 +9,13 @@ class Auth
         if (session_status() === PHP_SESSION_NONE) {
             // Always use a single session name throughout the website
             session_name('jt_session'); // Use a constant name for all pages
+            $isHttps = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on');
             session_set_cookie_params([
                 'lifetime' => SESSION_LIFETIME,
                 'path'     => '/',
                 'httponly' => true,
                 'samesite' => 'Lax',
-                'secure'   => isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on',
+                'secure'   => $isHttps,
             ]);
             session_start();
         }
