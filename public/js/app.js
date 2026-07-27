@@ -1,4 +1,4 @@
-// public/js/app.js — JobTracker Frontend
+// public/js/app.js — JobTracker Frontend v2
 
 // ── Applications Page ───────────────────────────────────────────────────────
 function initApplicationsPage() {
@@ -259,8 +259,10 @@ async function postFormData(fd) {
   }
 }
 
-// Auto-dismiss alerts after 4 s and setup mobile sidebar toggle
+// ── DOMContentLoaded — Global Initialization ────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
+
+  // Auto-dismiss alerts after 4s
   document.querySelectorAll('.alert-dismissible').forEach(el => {
     setTimeout(() => {
       const bsAlert = bootstrap.Alert.getOrCreateInstance(el);
@@ -268,30 +270,90 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 4000);
   });
 
-  // Mobile sidebar toggle handlers
-  const sidebar = document.querySelector('.sidebar');
-  const toggleBtn = document.getElementById('sidebarToggle');
-  const closeBtn = document.getElementById('sidebarClose');
+  // ── Mobile Sidebar Toggle + Overlay ──────────────────────────────────────
+  const sidebar    = document.querySelector('.sidebar');
+  const overlay    = document.getElementById('sidebarOverlay');
+  const toggleBtn  = document.getElementById('sidebarToggle');
+  const closeBtn   = document.getElementById('sidebarClose');
 
-  if (toggleBtn && sidebar) {
+  function openSidebar() {
+    if (sidebar) sidebar.classList.add('open');
+    if (overlay) overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeSidebar() {
+    if (sidebar) sidebar.classList.remove('open');
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  if (toggleBtn) {
     toggleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      sidebar.classList.toggle('open');
+      if (sidebar && sidebar.classList.contains('open')) {
+        closeSidebar();
+      } else {
+        openSidebar();
+      }
     });
   }
 
-  if (closeBtn && sidebar) {
-    closeBtn.addEventListener('click', () => {
-      sidebar.classList.remove('open');
-    });
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeSidebar);
   }
 
-  // Close sidebar on tapping main content on mobile if sidebar is open
+  if (overlay) {
+    overlay.addEventListener('click', closeSidebar);
+  }
+
+  // Close sidebar on clicking main content (mobile)
   document.addEventListener('click', (e) => {
     if (sidebar && sidebar.classList.contains('open')) {
-      if (!sidebar.contains(e.target) && e.target !== toggleBtn) {
-        sidebar.classList.remove('open');
+      if (!sidebar.contains(e.target) && e.target !== toggleBtn && !toggleBtn?.contains(e.target)) {
+        closeSidebar();
       }
     }
   });
+
+  // ── Stagger Animation (IntersectionObserver) ─────────────────────────────
+  const animateEls = document.querySelectorAll('.animate-in');
+  if (animateEls.length > 0 && 'IntersectionObserver' in window) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => {
+            entry.target.classList.add('visible');
+          }, i * 80);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    animateEls.forEach(el => observer.observe(el));
+  }
+
+  // ── Animated Number Counters ─────────────────────────────────────────────
+  document.querySelectorAll('.stat-value').forEach(el => {
+    const text = el.textContent.trim();
+    const num = parseInt(text);
+    if (!isNaN(num) && num > 0 && num < 10000) {
+      const suffix = text.replace(num.toString(), '');
+      el.textContent = '0' + suffix;
+      let current = 0;
+      const step = Math.max(1, Math.floor(num / 30));
+      const duration = 600;
+      const interval = duration / (num / step);
+      
+      const counter = setInterval(() => {
+        current += step;
+        if (current >= num) {
+          current = num;
+          clearInterval(counter);
+        }
+        el.textContent = current + suffix;
+      }, interval);
+    }
+  });
+
 });

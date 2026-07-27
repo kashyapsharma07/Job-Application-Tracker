@@ -56,8 +56,9 @@ $csrf = Auth::csrfToken();
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Login — JobTracker</title>
+<link rel="icon" href="<?= APP_URL ?>/uploads/resumes/job_logo.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="<?= APP_URL ?>/css/app.css" rel="stylesheet">
@@ -65,13 +66,13 @@ $csrf = Auth::csrfToken();
 <body class="auth-page">
 <div class="auth-card">
   <div class="auth-logo">
-    <div class="brand-icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;overflow:hidden;padding:0;box-shadow:0 2px 12px 0 rgba(30, 64, 175, 0.18);">
+    <div class="brand-icon" style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:12px;overflow:hidden;padding:0;box-shadow:0 4px 14px rgba(99,102,241,0.2);">
       <img src="<?= APP_URL ?>/uploads/resumes/job_logo.png" alt="Logo" style="width:180%;height:180%;object-fit:cover;display:block;margin-left:-10%;margin-top:-10%;">
     </div>
     <span class="brand-name">JobTracker</span>
   </div>
-  <h2 class="text-center mb-1" style="font-family:'Sora',sans-serif;font-size:22px">Welcome back</h2>
-  <p class="text-center text-muted mb-4" style="font-size:14px">Sign in to your account</p>
+  <h2 class="text-center mb-1" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:var(--text-primary)">Welcome back</h2>
+  <p class="text-center mb-4" style="font-size:14px;color:var(--text-secondary)">Sign in to continue your job search</p>
 
   <?php if ($error): ?>
   <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:13px"><?= h($error) ?></div>
@@ -89,13 +90,13 @@ $csrf = Auth::csrfToken();
       <input type="password" name="password" class="form-control" required placeholder="••••••••">
     </div>
     <div class="mb-4 text-end">
-      <a href="<?= APP_URL ?>/forgot-password.php" class="text-decoration-none" style="font-size:13px">Forgot password?</a>
+      <a href="<?= APP_URL ?>/forgot-password.php" class="text-decoration-none" style="font-size:13px;color:var(--brand);font-weight:500">Forgot password?</a>
     </div>
-    <button type="submit" class="btn btn-primary w-100">Sign In</button>
+    <button type="submit" class="btn btn-primary w-100" style="padding:12px;font-weight:600;">Sign In</button>
   </form>
 
-  <p class="text-center mt-4 mb-0" style="font-size:13px">
-    Don't have an account? <a href="<?= APP_URL ?>/register.php" class="text-decoration-none fw-600">Sign up</a>
+  <p class="text-center mt-4 mb-0" style="font-size:13px;color:var(--text-secondary)">
+    Don't have an account? <a href="<?= APP_URL ?>/register.php" class="text-decoration-none fw-600" style="color:var(--brand);font-weight:600">Sign up</a>
   </p>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

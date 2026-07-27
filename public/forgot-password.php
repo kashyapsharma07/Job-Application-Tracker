@@ -102,20 +102,20 @@ $csrf = Auth::csrfToken();
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Forgot Password — JobTracker</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="<?= APP_URL ?>/css/app.css" rel="stylesheet">
 </head>
 <body class="auth-page">
 <div class="auth-card">
     <div class="auth-logo">
-                <div class="brand-icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;overflow:hidden;padding:0;box-shadow:0 2px 12px 0 rgba(30, 64, 175, 0.18);">
-                      <img src="<?= APP_URL ?>/uploads/resumes/job_logo.png" alt="Logo" style="width:120%;height:120%;object-fit:cover;display:block;margin-left:-10%;margin-top:-10%;">
-                </div>
+        <div class="brand-icon" style="width:42px;height:42px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:12px;overflow:hidden;padding:0;box-shadow:0 4px 14px rgba(99,102,241,0.2);">
+              <img src="<?= APP_URL ?>/uploads/resumes/job_logo.png" alt="Logo" style="width:180%;height:180%;object-fit:cover;display:block;margin-left:-10%;margin-top:-10%;">
+        </div>
         <span class="brand-name">JobTracker</span>
     </div>
-    <h2 class="text-center mb-1" style="font-family:'Sora',sans-serif;font-size:22px">Forgot Password</h2>
-    <p class="text-center text-muted mb-4" style="font-size:14px">Enter your email to receive a password reset link.</p>
+    <h2 class="text-center mb-1" style="font-family:'Sora',sans-serif;font-size:22px;font-weight:700;color:var(--text-primary)">Forgot Password</h2>
+    <p class="text-center mb-4" style="font-size:14px;color:var(--text-secondary)">Enter your email to receive a password reset link.</p>
     
     <?php if ($error): ?>
         <div class="alert alert-danger py-2 px-3 mb-3" style="font-size:13px"><?= h($error) ?></div>
@@ -130,11 +130,11 @@ $csrf = Auth::csrfToken();
                 <label class="form-label">Email address</label>
                 <input type="email" name="email" class="form-control" required placeholder="you@example.com">
             </div>
-            <button type="submit" class="btn btn-primary w-100">Send Reset Link</button>
+            <button type="submit" class="btn btn-primary w-100" style="padding:12px;font-weight:600;">Send Reset Link</button>
         </form>
     <?php endif; ?>
     <p class="text-center mt-4 mb-0" style="font-size:13px">
-        <a href="login.php" class="text-decoration-none fw-600">Back to login</a>
+        <a href="login.php" class="text-decoration-none" style="color:var(--brand);font-weight:600">Back to login</a>
     </p>
 </div>
 </body>

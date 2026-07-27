@@ -3,6 +3,19 @@
 $flash = getFlash();
 $currentUser = Auth::user();
 $currentPage = $currentPage ?? '';
+
+// Time-of-day greeting
+$hour = (int)date('G');
+if ($hour < 12) {
+    $greeting = 'Good morning';
+    $greetEmoji = '☀️';
+} elseif ($hour < 17) {
+    $greeting = 'Good afternoon';
+    $greetEmoji = '🌤️';
+} else {
+    $greeting = 'Good evening';
+    $greetEmoji = '🌙';
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -13,7 +26,7 @@ $currentPage = $currentPage ?? '';
 <link rel="icon" href="<?= APP_URL ?>/uploads/resumes/job_logo.png" type="image/png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 <link href="<?= APP_URL ?>/css/app.css" rel="stylesheet">
@@ -22,12 +35,15 @@ $currentPage = $currentPage ?? '';
 <body <?= $currentPage === 'go-premium' ? 'class="premium-page"' : '' ?>>
 
 <div class="app-wrapper">
+  <!-- Sidebar Overlay (mobile backdrop) -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
   <!-- Sidebar -->
   <aside class="sidebar">
     <!-- Close button for mobile screens -->
-    <button type="button" class="btn-close d-md-none position-absolute top-0 end-0 m-3" id="sidebarClose" aria-label="Close"></button>
+    <button type="button" class="btn-close btn-close-white d-md-none position-absolute top-0 end-0 m-3" id="sidebarClose" aria-label="Close" style="opacity:0.5;filter:invert(0);"></button>
     <a href="<?= APP_URL ?>/dashboard.php" class="sidebar-brand" style="text-decoration:none">
-      <div class="brand-icon" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:10px;overflow:hidden;padding:0;">
+      <div class="brand-icon" style="width:38px;height:38px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:11px;overflow:hidden;padding:0;">
         <img src="<?= APP_URL ?>/uploads/resumes/job_logo.png" alt="Logo" style="width:180%;height:180%;object-fit:cover;display:block;">
       </div>
       <span class="brand-name">JobTracker</span>
@@ -53,8 +69,8 @@ $currentPage = $currentPage ?? '';
 
     <?php if (Auth::isAdmin()): ?>
     <!-- Admin Section -->
-    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
-      <p style="font-size:11px; text-transform:uppercase; color:#9ca3af; margin:0 16px 12px; font-weight:600; letter-spacing:0.5px">
+    <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.06);">
+      <p style="font-size:10px; text-transform:uppercase; color:rgba(255,255,255,0.3); margin:0 16px 10px; font-weight:600; letter-spacing:0.8px">
         <i class="bi bi-shield-lock"></i> Admin
       </p>
       <nav class="sidebar-nav">
@@ -76,7 +92,7 @@ $currentPage = $currentPage ?? '';
         <i class="bi bi-gear"></i> <span>Settings</span>
       </a>
       <div class="user-card">
-        <div class="user-avatar" style="width:40px;height:40px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden">
+        <div class="user-avatar" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden">
           <?php if (!empty($currentUser['avatar'])): ?>
             <img src="<?= APP_URL ?>/uploads/avatars/<?= h($currentUser['avatar']) ?>?v=<?= time() ?>" alt="Avatar" style="width:100%;height:100%;object-fit:cover;">
           <?php else: ?>
@@ -97,16 +113,16 @@ $currentPage = $currentPage ?? '';
     <!-- Top bar -->
     <div class="topbar">
       <div style="display:flex;align-items:center;justify-content:space-between;width:100%;gap:12px;">
-        <button class="btn btn-outline-secondary d-md-none" id="sidebarToggle" style="padding: 4px 10px; font-size: 18px; border-color: var(--border);">
+        <button class="btn btn-outline-secondary d-md-none" id="sidebarToggle" style="padding: 4px 10px; font-size: 18px; border-color: rgba(226,232,240,0.6); background: transparent;">
           <i class="bi bi-list"></i>
         </button>
         <div class="topbar-search">
           <i class="bi bi-search"></i>
           <input type="text" id="globalSearch" placeholder="Search applications..." autocomplete="off">
         </div>
-        <div class="topbar-actions" style="display:flex;align-items:center;gap:14px;">
-          <button class="btn btn-primary btn-sm" onclick="window.location='<?= APP_URL ?>/applications.php?action=new'">
-            <i class="bi bi-plus-lg"></i> Add New Application
+        <div class="topbar-actions" style="display:flex;align-items:center;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="window.location='<?= APP_URL ?>/applications.php?action=new'" style="padding: 8px 16px;">
+            <i class="bi bi-plus-lg"></i> <span>New App</span>
           </button>
           <a href="<?= APP_URL ?>/reminders.php" class="topbar-icon" title="Reminders">
             <i class="bi bi-bell"></i>
@@ -116,7 +132,7 @@ $currentPage = $currentPage ?? '';
     </div>
 
     <?php if ($flash): ?>
-    <div class="alert alert-<?= $flash['type'] === 'error' ? 'danger' : 'success' ?> alert-dismissible fade show mx-3 mt-3" role="alert">
+    <div class="alert alert-<?= $flash['type'] === 'error' ? 'danger' : 'success' ?> alert-dismissible fade show mx-3 mt-3" role="alert" style="margin-top: calc(var(--topbar-h) + 12px) !important;">
       <?= h($flash['msg']) ?>
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
