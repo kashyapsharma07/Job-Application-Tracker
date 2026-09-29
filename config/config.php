@@ -18,7 +18,7 @@ if (getenv('APP_URL')) {
     $protocol = (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
     $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
     // If using built-in PHP server (port 3000) or Ngrok tunneling to it
-    $basePath = (strpos($host, 'localhost:30') !== false || strpos($host, 'ngrok') !== false) ? '/public' : '/jobtracker/public';
+    $basePath = (strpos($host, 'localhost:30') !== false || strpos($host, 'localhost:8000') !== false || strpos($host, 'ngrok') !== false) ? '' : '/jobtracker/public';
     define('APP_URL', $protocol . '://' . $host . $basePath);
 }
 
