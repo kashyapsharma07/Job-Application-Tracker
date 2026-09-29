@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_event'])) {
 $pageTitle   = h($app['job_title']) . ' at ' . h($app['company']);
 $currentPage = 'applications';
 
-ob_start();
+include __DIR__ . '/../views/partials/header.php';
 ?>
 <div class="mb-4">
   <a href="<?= APP_URL ?>/applications.php" class="text-decoration-none text-muted" style="font-size:13px">
@@ -167,7 +167,10 @@ ob_start();
       <form method="POST">
         <input type="hidden" name="csrf_token" value="<?= Auth::csrfToken() ?>">
         <input type="hidden" name="add_event" value="1">
-        <div class="modal-header"><h5 class="modal-title">Add Event</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-header">
+          <h5 class="modal-title">Add Event</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label">Event Type</label>
@@ -198,12 +201,13 @@ ob_start();
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-primary">Add Event</button>
         </div>
+      </form>
     </div>
-      <?php
-      $content = ob_get_clean();
-      include __DIR__ . '/../views/partials/header.php';
-      echo $content;
-?>
+  </div>
+</div>
+
 <input type="hidden" id="csrfToken" value="<?= Auth::csrfToken() ?>">
+
 <?php
-      include __DIR__ . '/../views/partials/footer.php';
+include __DIR__ . '/../views/partials/footer.php';
+?>
