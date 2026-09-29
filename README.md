@@ -1,19 +1,21 @@
 # JobTracker — Job Application Management System
 
-A full-featured PHP/MySQL web application for job seekers to efficiently track applications, manage resume versions, set reminders, and view analytics.
+A full-featured PHP/MySQL web application for job seekers to efficiently track applications, manage resume versions, set reminders, leverage AI resume analysis, and view analytics.
 
 ---
 
 ## Features
 
-- **Authentication** — Secure register/login with PHP sessions, CSRF protection, and bcrypt password hashing
+- **Authentication & Security** — Secure register/login with PHP sessions, Two-Factor Authentication (2FA), CSRF protection, and bcrypt password hashing
+- **AI Career Coach** — Powered by **Google Gemini API** (`gemini-2.5-flash`), analyzes uploaded PDF resumes and provides ATS scoring, brutal FAANG recruiter feedback, and actionable bullet-point rewrites
 - **Application Management** — Full CRUD with Kanban board and list view. Track status (Wishlist → Applied → Interviewing → Offer/Rejected)
 - **Resume Versions** — Upload and manage multiple resume versions (PDF/DOCX). Link specific resume versions to each application
 - **Timeline & Notes** — Per-application event timeline (interviews, deadlines, follow-ups, notes) and rich notes
 - **Calendar View** — Monthly calendar showing all scheduled events across applications
 - **Reminders** — Schedule follow-up reminders linked to applications, with automated email notifications
-- **Analytics Dashboard** — Applications over time (Chart.js), stage breakdown, top companies, recent activity
-- **Settings** — Profile management, notification preferences, password change
+- **Analytics Dashboard** — Applications over time (Chart.js), conversion funnel, stage breakdown, top companies, recent activity
+- **Premium Subscription & Payments** — Integrated Razorpay payment gateway for unlocking premium AI features
+- **Settings** — Profile management, notification preferences, 2FA setup, and security management
 - **Cron Job** — Automated reminder email delivery every 5 minutes
 
 ---
@@ -23,9 +25,11 @@ A full-featured PHP/MySQL web application for job seekers to efficiently track a
 | Layer | Technology |
 |-------|-----------|
 | Backend | PHP 8.0+ (plain OOP, MVC-inspired) |
-| Frontend | HTML5, CSS3, Bootstrap 5.3, Chart.js 4, Bootstrap Icons |
+| AI Integration | Google Gemini API (`gemini-2.5-flash`) |
+| Payments | Razorpay API |
+| Frontend | HTML5, Vanilla CSS, Bootstrap 5.3, Chart.js 4, Bootstrap Icons |
 | Database | MySQL 8.0 |
-| Auth | PHP Sessions + CSRF tokens |
+| Auth | PHP Sessions + 2FA + CSRF tokens |
 | Email | PHPMailer (SMTP) / PHP `mail()` fallback |
 | Fonts | Sora (headings) + Inter (body) via Google Fonts |
 
@@ -36,21 +40,24 @@ A full-featured PHP/MySQL web application for job seekers to efficiently track a
 ```
 jobtracker/
 ├── config/
-│   ├── config.php          # App configuration (DB, SMTP, upload settings)
+│   ├── config.php          # App configuration (DB, SMTP, Gemini API, upload settings)
 │   └── database.php        # PDO singleton
 ├── cron/
 │   └── send_reminders.php  # Automated email reminder cron job
 ├── public/                 # Document root (point your web server here)
 │   ├── css/app.css
 │   ├── js/app.js
+│   ├── js/ai-resume.js     # AI Career Coach frontend script
 │   ├── uploads/resumes/    # Resume file storage (writable)
 │   ├── index.php           # Redirect to dashboard/login
 │   ├── login.php
 │   ├── register.php
-│   ├── logout.php
+│   ├── 2fa-login.php
+│   ├── 2fa-setup.php
 │   ├── dashboard.php
 │   ├── applications.php
 │   ├── application-detail.php
+│   ├── ai_analyse.php      # Gemini AI analysis endpoint
 │   ├── analytics.php
 │   ├── calendar.php
 │   ├── resumes.php
@@ -61,7 +68,7 @@ jobtracker/
 ├── src/
 │   ├── bootstrap.php       # Autoloader + helpers
 │   ├── helpers/
-│   │   ├── Auth.php        # Session authentication + CSRF
+│   │   ├── Auth.php        # Session authentication + 2FA + CSRF
 │   │   └── Mailer.php      # Email helper (PHPMailer/mail fallback)
 │   └── models/
 │       ├── User.php
@@ -76,106 +83,44 @@ jobtracker/
 
 ---
 
-## Setup Instructions
+## Quick Start & Running Locally
 
 ### 1. Requirements
 
-- PHP 8.0+ with extensions: `pdo_mysql`, `fileinfo`, `mbstring`, `openssl`
+- PHP 8.0+ with extensions: `pdo_mysql`, `fileinfo`, `mbstring`, `openssl`, `curl`
 - MySQL 8.0+
-- Apache/Nginx with `mod_rewrite` enabled
-- (Optional) Composer for PHPMailer
+- XAMPP / Apache / Built-in PHP CLI Server
 
 ### 2. Database Setup
 
-```sql
--- In MySQL client or phpMyAdmin:
-SOURCE /path/to/jobtracker/sql/schema.sql;
-```
-
-Or run manually:
+Import schema into your MySQL database (`jobtracker`):
 ```bash
-mysql -u root -p < sql/schema.sql
+mysql -u root -p jobtracker < sql/schema.sql
 ```
 
-### 3. Configuration
+### 3. Environment Configuration (`.env`)
 
-Edit `config/config.php`:
+Create a `.env` file in the project root:
+```env
+RAZORPAY_KEY_ID=your_razorpay_key_id
+RAZORPAY_KEY_SECRET=your_razorpay_key_secret
 
-```php
-// Database
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'jobtracker');
-define('DB_USER', 'your_db_user');
-define('DB_PASS', 'your_db_password');
-
-// App URL (no trailing slash)
-define('APP_URL', 'http://localhost/jobtracker/public');
-
-// SMTP Email (for reminders)
-define('SMTP_HOST', 'smtp.gmail.com');
-define('SMTP_USER', 'your@gmail.com');
-define('SMTP_PASS', 'your_app_password');  // Gmail App Password
+GEMINI_API_KEY=your_google_gemini_api_key
 ```
 
-### 4. Web Server Config
+### 4. Running the Server
 
-**Apache** — Point DocumentRoot to `public/` or use a virtual host:
-```apache
-<VirtualHost *:80>
-    ServerName jobtracker.local
-    DocumentRoot /var/www/html/jobtracker/public
-    <Directory /var/www/html/jobtracker/public>
-        AllowOverride All
-        Require all granted
-    </Directory>
-</VirtualHost>
-```
-
-**Nginx:**
-```nginx
-server {
-    listen 80;
-    server_name jobtracker.local;
-    root /var/www/html/jobtracker/public;
-    index index.php;
-
-    location / { try_files $uri $uri/ /index.php?$query_string; }
-    location ~ \.php$ {
-        fastcgi_pass unix:/run/php/php8.1-fpm.sock;
-        include fastcgi_params;
-        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
-    }
-    # Block PHP in uploads
-    location ~ ^/uploads/.*\.php$ { deny all; }
-}
-```
-
-### 5. Permissions
-
+#### Option A: PHP Built-in Server (Quickest)
 ```bash
-chmod -R 755 public/
-chmod -R 775 public/uploads/resumes/
-chown -R www-data:www-data public/uploads/
+cd /path/to/jobtracker
+php -S localhost:8000 -t public
 ```
+Access in browser: `http://localhost:8000`
 
-### 6. (Optional) Install PHPMailer
-
+#### Option B: Ngrok Tunneling
+If running locally and tunneling via ngrok:
 ```bash
-composer require phpmailer/phpmailer
-```
-Then require the autoloader in `config/config.php`:
-```php
-require_once __DIR__ . '/../vendor/autoload.php';
-```
-
-### 7. Set Up Cron Job
-
-```bash
-# Edit crontab
-crontab -e
-
-# Add this line (runs every 5 minutes):
-*/5 * * * * /usr/bin/php /var/www/html/jobtracker/cron/send_reminders.php >> /var/log/jobtracker_cron.log 2>&1
+ngrok http 8000
 ```
 
 ---
@@ -183,21 +128,13 @@ crontab -e
 ## Security Features
 
 - **CSRF Protection** — Every POST request validated with CSRF tokens
+- **Two-Factor Authentication (2FA)** — Optional 2FA security layer for user accounts
+- **Environment Isolation** — Sensitive API keys kept in `.env` (excluded from source control)
 - **Password Hashing** — bcrypt with cost factor 12
 - **Session Security** — HttpOnly cookies, `session_regenerate_id()` on login, `SameSite=Lax`
 - **SQL Injection Prevention** — All queries use PDO prepared statements
 - **XSS Prevention** — All output HTML-escaped with `htmlspecialchars()`
-- **File Upload Security** — MIME type validation, extension checking, random filenames, PHP blocked in upload directory
-- **Directory Listing** — Disabled via `.htaccess`
-
----
-
-## Environment Notes
-
-- The upload directory `public/uploads/resumes/` must be writable by the web server
-- For production, set `display_errors = Off` in PHP config
-- Use HTTPS in production and update `session.cookie_secure = 1`
-- For Gmail SMTP, generate an [App Password](https://support.google.com/accounts/answer/185833)
+- **File Upload Security** — MIME type validation, extension checking, random filenames, PHP execution blocked in upload directory
 
 ---
 
