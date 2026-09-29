@@ -60,6 +60,6 @@ define('HASH_COST', 12);
 define('RAZORPAY_KEY_ID', getenv('RAZORPAY_KEY_ID') ?: '');
 define('RAZORPAY_KEY_SECRET', getenv('RAZORPAY_KEY_SECRET') ?: '');
 
-// AI API Configuration (Groq)
-define('AI_API_KEY', $_ENV['GROQ_API_KEY'] ?? ($_SERVER['GROQ_API_KEY'] ?? getenv('GROQ_API_KEY') ?: ''));
-define('AI_MODEL', 'llama3-70b-8192');
+// AI API Configuration (Google Gemini)
+define('GEMINI_API_KEY', $_ENV['GEMINI_API_KEY'] ?? ($_SERVER['GEMINI_API_KEY'] ?? getenv('GEMINI_API_KEY') ?: ''));
+define('GEMINI_MODEL', 'gemini-2.5-flash');

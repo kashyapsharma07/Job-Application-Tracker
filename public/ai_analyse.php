@@ -134,86 +134,68 @@ Return valid JSON with this exact structure:
 PROMPT;
     
     
-    // ===== CALL GROQ API =====
-    $apiKey = defined('AI_API_KEY') ? AI_API_KEY : '';
-    $model = defined('AI_MODEL') ? AI_MODEL : '';
-    
-    if (!$apiKey || !$model) {
+    // ===== CALL GOOGLE GEMINI API =====
+    $geminiKey = defined('GEMINI_API_KEY') ? GEMINI_API_KEY : '';
+    if (empty($geminiKey)) {
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'API configuration error.']);
+        echo json_encode(['success' => false, 'error' => 'Gemini API key is missing. Please check your config or .env configuration.']);
         exit;
     }
     
-    $modelsToTry = array_unique([$model, 'llama-3.3-70b-versatile', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'llama3-8b-8192']);
-    $response = false;
-    $httpCode = 0;
-    $curlError = '';
-    $lastErrorMsg = '';
+    $aiText = '';
+    $geminiModels = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.5-flash-lite', 'gemini-1.5-flash-8b'];
 
-    foreach ($modelsToTry as $currentModel) {
+    $lastGeminiError = '';
+    foreach ($geminiModels as $gModel) {
+        $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . $gModel . ':generateContent?key=' . $geminiKey;
+        $payload = json_encode([
+            'contents' => [
+                [
+                    'parts' => [
+                        ['text' => "You are a resume analysis API. Respond strictly with raw JSON object matching the requested schema. Do not output markdown backticks.\n\n" . $prompt]
+                    ]
+                ]
+            ],
+            'generationConfig' => [
+                'temperature' => 0.1,
+                'responseMimeType' => 'application/json'
+            ]
+        ]);
+
         $client = curl_init();
         curl_setopt_array($client, [
-            CURLOPT_URL => 'https://api.groq.com/openai/v1/chat/completions',
+            CURLOPT_URL => $url,
             CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER => [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $apiKey
-            ],
+            CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
             CURLOPT_POST => true,
-            CURLOPT_POSTFIELDS => json_encode([
-                'model' => $currentModel,
-                'messages' => [
-                    ['role' => 'system', 'content' => 'You are a resume analysis API. You MUST respond with ONLY raw JSON. No markdown, no code fences, no explanations before or after the JSON. Just the pure JSON object.'],
-                    ['role' => 'user', 'content' => $prompt]
-                ],
-                'temperature' => 0.0,
-                'top_p' => 0.1,
-                'response_format' => ['type' => 'json_object']
-            ]),
+            CURLOPT_POSTFIELDS => $payload,
             CURLOPT_TIMEOUT => 60,
             CURLOPT_CONNECTTIMEOUT => 10,
-            CURLOPT_SSL_VERIFYPEER => false, 
+            CURLOPT_SSL_VERIFYPEER => false,
             CURLOPT_SSL_VERIFYHOST => false
         ]);
-        
-        $response = curl_exec($client);
-        $httpCode = curl_getinfo($client, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($client);
+
+        $resp = curl_exec($client);
+        $code = curl_getinfo($client, CURLINFO_HTTP_CODE);
         curl_close($client);
 
-        if ($response && $httpCode === 200) {
-            break; // Success!
+        if ($resp && $code === 200) {
+            $decoded = json_decode($resp, true);
+            if (isset($decoded['candidates'][0]['content']['parts'][0]['text'])) {
+                $aiText = trim($decoded['candidates'][0]['content']['parts'][0]['text']);
+                break;
+            }
+        } else {
+            $errData = json_decode($resp, true);
+            $lastGeminiError = $errData['error']['message'] ?? ('HTTP ' . $code);
         }
+    }
 
-        $errDetail = json_decode($response, true);
-        $lastErrorMsg = $errDetail['error']['message'] ?? ('HTTP ' . $httpCode);
-    }
-    
-    if ($curlError) {
+    if (empty($aiText)) {
         http_response_code(500);
-        error_log('AI Analyse cURL Error: ' . $curlError);
-        echo json_encode(['success' => false, 'error' => 'Network cURL error: ' . $curlError]);
+        echo json_encode(['success' => false, 'error' => 'Gemini API Error: ' . ($lastGeminiError ?: 'Analysis failed.')]);
         exit;
     }
-    
-    if (!$response || $httpCode !== 200) {
-        http_response_code(500);
-        error_log("AI service returned HTTP Code $httpCode. Response: " . $response);
-        $errDetail = json_decode($response, true);
-        $errorMsg = $errDetail['error']['message'] ?? 'AI service error (HTTP ' . $httpCode . '). Please try again.';
-        echo json_encode(['success' => false, 'error' => $errorMsg]);
-        exit;
-    }
-    
-    $data = json_decode($response, true);
-    if (!isset($data['choices'][0]['message']['content'])) {
-        http_response_code(500);
-        error_log('Invalid AI payload structure: ' . $response);
-        echo json_encode(['success' => false, 'error' => 'Invalid response structure from AI service.']);
-        exit;
-    }
-    
-    $aiText = trim($data['choices'][0]['message']['content']);
     
     // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
     $aiText = preg_replace('/^```(?:json)?\s*\n?/i', '', $aiText);
