@@ -38,10 +38,10 @@
         if (scoreRing) scoreRing.innerHTML = '';
         if (summaryDiv) summaryDiv.innerHTML = '';
         
-        // Get the base path from current location
-        const basePath = window.location.pathname.split('/').slice(0, -1).join('/');
+        // Get the API URL
+        const apiUrl = (typeof window.APP_URL !== 'undefined' ? window.APP_URL : '') + '/ai_analyse.php';
         
-        fetch(basePath + '/ai_analyse.php', {
+        fetch(apiUrl, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

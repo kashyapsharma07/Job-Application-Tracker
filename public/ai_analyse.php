@@ -68,7 +68,7 @@ try {
     }
     
     // ===== EXTRACT PDF TEXT =====
-    $pdfPath = __DIR__ . '/uploads/resumes/' . $resume['filename'];
+    $pdfPath = UPLOAD_PATH . $resume['filename'];
     if (!file_exists($pdfPath)) {
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'Resume file not found.']);
@@ -144,35 +144,50 @@ PROMPT;
         exit;
     }
     
-    $client = curl_init();
-    curl_setopt_array($client, [
-        CURLOPT_URL => 'https://api.groq.com/openai/v1/chat/completions',
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_HTTPHEADER => [
-            'Content-Type: application/json',
-            'Authorization: Bearer ' . $apiKey
-        ],
-        CURLOPT_POST => true,
-        CURLOPT_POSTFIELDS => json_encode([
-            'model' => $model,
-            'messages' => [
-                ['role' => 'system', 'content' => 'You are a resume analysis API. You MUST respond with ONLY raw JSON. No markdown, no code fences, no explanations before or after the JSON. Just the pure JSON object.'],
-                ['role' => 'user', 'content' => $prompt]
+    $modelsToTry = array_unique([$model, 'llama-3.3-70b-versatile', 'llama3-70b-8192', 'mixtral-8x7b-32768', 'llama3-8b-8192']);
+    $response = false;
+    $httpCode = 0;
+    $curlError = '';
+    $lastErrorMsg = '';
+
+    foreach ($modelsToTry as $currentModel) {
+        $client = curl_init();
+        curl_setopt_array($client, [
+            CURLOPT_URL => 'https://api.groq.com/openai/v1/chat/completions',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Content-Type: application/json',
+                'Authorization: Bearer ' . $apiKey
             ],
-            'temperature' => 0.0,
-            'top_p' => 0.1,
-            'response_format' => ['type' => 'json_object']
-        ]),
-        CURLOPT_TIMEOUT => 60,
-        CURLOPT_CONNECTTIMEOUT => 10,
-        CURLOPT_SSL_VERIFYPEER => false, 
-        CURLOPT_SSL_VERIFYHOST => false
-    ]);
-    
-    $response = curl_exec($client);
-    $httpCode = curl_getinfo($client, CURLINFO_HTTP_CODE);
-    $curlError = curl_error($client);
-    curl_close($client);
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => json_encode([
+                'model' => $currentModel,
+                'messages' => [
+                    ['role' => 'system', 'content' => 'You are a resume analysis API. You MUST respond with ONLY raw JSON. No markdown, no code fences, no explanations before or after the JSON. Just the pure JSON object.'],
+                    ['role' => 'user', 'content' => $prompt]
+                ],
+                'temperature' => 0.0,
+                'top_p' => 0.1,
+                'response_format' => ['type' => 'json_object']
+            ]),
+            CURLOPT_TIMEOUT => 60,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => false, 
+            CURLOPT_SSL_VERIFYHOST => false
+        ]);
+        
+        $response = curl_exec($client);
+        $httpCode = curl_getinfo($client, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($client);
+        curl_close($client);
+
+        if ($response && $httpCode === 200) {
+            break; // Success!
+        }
+
+        $errDetail = json_decode($response, true);
+        $lastErrorMsg = $errDetail['error']['message'] ?? ('HTTP ' . $httpCode);
+    }
     
     if ($curlError) {
         http_response_code(500);
